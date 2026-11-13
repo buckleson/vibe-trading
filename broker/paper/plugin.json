@@ -1,0 +1,11 @@
+{
+    "Plugin Name": "paper",
+    "Plugin URI": "https://openalgo.in",
+    "Description": "No-broker OpenAlgo plugin: simulated or Yahoo-delayed market data for Sandbox mode. Live orders are refused.",
+    "Version": "1.0",
+    "Author": "OpenAlgo",
+    "Author URI": "https://openalgo.in",
+    "supported_exchanges": ["NSE", "BSE", "NFO", "NSE_INDEX", "BSE_INDEX"],
+    "broker_type": "IN_stock",
+    "leverage_config": false
+}

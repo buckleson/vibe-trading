@@ -1,0 +1,109 @@
+# Quotes
+
+Get real-time market quotes for a single symbol including OHLC, LTP, bid/ask, and volume.
+
+## Endpoint URL
+
+```http
+Local Host   :  POST http://127.0.0.1:5000/api/v1/quotes
+Ngrok Domain :  POST https://<your-ngrok-domain>.ngrok-free.app/api/v1/quotes
+Custom Domain:  POST https://<your-custom-domain>/api/v1/quotes
+```
+
+## Sample API Request
+
+```json
+{
+  "apikey": "<your_app_apikey>",
+  "symbol": "RELIANCE",
+  "exchange": "NSE"
+}
+```
+
+## Sample cURL Request
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/v1/quotes \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "apikey": "<your_app_apikey>",
+  "symbol": "RELIANCE",
+  "exchange": "NSE"
+}'
+```
+
+## Sample API Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "open": 1172.0,
+    "high": 1196.6,
+    "low": 1163.3,
+    "ltp": 1187.75,
+    "ask": 1188.0,
+    "bid": 1187.85,
+    "prev_close": 1165.7,
+    "volume": 14414545
+  }
+}
+```
+
+## Request Body
+
+| Parameter | Description | Mandatory/Optional | Default Value |
+|-----------|-------------|-------------------|---------------|
+| apikey | Your OpenAlgo API key | Mandatory | - |
+| symbol | Trading symbol | Mandatory | - |
+| exchange | Exchange code from the [shared constants](../../prompt/order-constants.md), supported by the active broker | Mandatory | - |
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | string | "success" or "error" |
+| data | object | Quote data object |
+
+### Data Object Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| open | number | Day's open price |
+| high | number | Day's high price |
+| low | number | Day's low price |
+| ltp | number | Last traded price |
+| ask | number | Best ask price |
+| bid | number | Best bid price |
+| prev_close | number | Previous day's close price |
+| volume | number | Total traded volume |
+
+## Availability
+
+The sample is one possible broker snapshot, not a guarantee of every field for every instrument. Exchanges, OHLC, previous close, volume, OI and depth depend on broker support; indices can lack tradable bid/ask depth or volume. Some broker mappers use zero placeholders for unavailable fields. Verify capability and freshness before interpreting zero as a measured value. REST `prev_close` differs from the streaming `close` key.
+
+## Notes
+
+- This call returns one broker snapshot; its freshness and fields depend on the broker and instrument
+- For **F&O symbols**, use the OpenAlgo standard format (e.g., NIFTY25AUG26FUT)
+- For **multiple symbols**, use the [MultiQuotes](./multiquotes.md) endpoint
+- The **bid/ask** spread indicates liquidity
+
+## Example: F&O Quote
+
+```json
+{
+  "apikey": "<your_app_apikey>",
+  "symbol": "NIFTY25AUG26FUT",
+  "exchange": "NFO"
+}
+```
+
+## Related Endpoints
+
+- [MultiQuotes](./multiquotes.md) - Get quotes for multiple symbols
+- [Depth](./depth.md) - Get market depth (Level 2)
+
+---
+
+**Back to**: [API Documentation](../README.md)
