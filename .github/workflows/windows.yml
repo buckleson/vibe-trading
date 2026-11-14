@@ -35,7 +35,7 @@ jobs:
         run: uv run pytest test/test_paper_broker.py test/test_buckleson_bridge.py test/test_bk_zerodha_only.py test/test_bk_broker_login.py test/test_bk_platforms_removed.py test/test_bk_claude_connect.py test/test_bk_paper_history.py test/test_bk_backtests.py test/test_bk_sandbox_smoke.py test/test_bk_ci.py -o addopts="" -q
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
