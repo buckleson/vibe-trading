@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useClaudeStore } from '@/stores/claudeStore'
 import { ClaudeChat } from './ClaudeChat'
+import { ConnectClaude } from './ConnectClaude'
 
 /** Poll the bridge status while the app is open. */
 export function useClaudeStatusPolling(intervalMs = 15000) {
@@ -27,13 +28,15 @@ export function useClaudeState(): { state: ClaudeState; label: string; detail: s
     return {
       state: 'connected',
       label: 'Claude connected',
-      detail: `Claude Code ${cli.version ?? ''}${external.connected ? ' · terminal session active' : ''}`.trim(),
+      detail:
+        `${cli.plan?.label ?? 'Claude Code'} · v${cli.version ?? ''}${external.connected ? ' · terminal session active' : ''}`.trim(),
     }
   }
   if (external.connected) {
     return { state: 'external', label: 'Claude connected', detail: 'Terminal session over MCP' }
   }
-  if (cli.installed) return { state: 'signed-out', label: 'Claude signed out', detail: 'Run claude auth login' }
+  if (cli.installed)
+    return { state: 'signed-out', label: 'Claude signed out', detail: 'Press Connect Claude' }
   return { state: 'missing', label: 'Claude offline', detail: 'Claude Code is not installed' }
 }
 
@@ -44,7 +47,9 @@ export function StatusDot({ state, className }: { state: ClaudeState; className?
         <span
           className={cn(
             'absolute inset-0 rounded-full opacity-60',
-            state === 'busy' ? 'bg-foreground bk-pulse' : 'bg-emerald-500 animate-ping [animation-duration:2.4s]'
+            state === 'busy'
+              ? 'bg-foreground bk-pulse'
+              : 'bg-emerald-500 animate-ping [animation-duration:2.4s]'
           )}
         />
       )}
@@ -77,7 +82,9 @@ export function ClaudeStatusPill() {
       aria-pressed={panelOpen}
       className={cn(
         'flex h-8 items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors',
-        panelOpen ? 'border-foreground/20 bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+        panelOpen
+          ? 'border-foreground/20 bg-accent text-foreground'
+          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
       )}
     >
       <StatusDot state={state} />
@@ -89,7 +96,8 @@ export function ClaudeStatusPill() {
 
 /** The docked panel beside every page. */
 export function ClaudePanel() {
-  const { panelOpen, setPanelOpen, newConversation, access, setAccess, streaming, mcpState } = useClaudeStore()
+  const { panelOpen, setPanelOpen, newConversation, access, setAccess, streaming, mcpState } =
+    useClaudeStore()
   const { state, label, detail } = useClaudeState()
 
   useEffect(() => {
@@ -113,7 +121,9 @@ export function ClaudePanel() {
       <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
         <StatusDot state={state} />
         <div className="min-w-0">
-          <div className="text-sm font-semibold leading-tight">{state === 'busy' ? 'Claude' : label}</div>
+          <div className="text-sm font-semibold leading-tight">
+            {state === 'busy' ? 'Claude' : label}
+          </div>
           <div className="truncate text-[11px] leading-tight text-muted-foreground">
             {mcpState && mcpState !== 'connected' ? `Platform tools: ${mcpState}` : detail}
           </div>
@@ -159,6 +169,7 @@ export function ClaudePanel() {
           </button>
         </div>
       </div>
+      {(state === 'signed-out' || state === 'missing') && <ConnectClaude compact />}
       <div className="min-h-0 flex-1">
         <ClaudeChat compact />
       </div>

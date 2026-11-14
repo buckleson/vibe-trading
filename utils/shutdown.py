@@ -27,8 +27,8 @@ statement in ``app.py`` and nothing runs after it, so there is no point at which
 the collector is told to stop. This module supplies that point.
 
 **The same gap left every scheduler running.** A process on its way out still
-holds six APScheduler instances: the strategy module's, Flow's, Historify's,
-Chartink's, the Python strategy host's and the sandbox square-off. Each runs on
+holds five APScheduler instances: the strategy module's, Flow's, Historify's,
+the Python strategy host's and the sandbox square-off. Each runs on
 a daemon thread, so the interpreter does not wait for it and it keeps firing
 while the interpreter tears itself down. The thread pools those jobs submit to
 are closed first, by the exit hook ``concurrent.futures`` installs, so every
@@ -131,8 +131,7 @@ def _imported(name: str):
     Looked up in ``sys.modules`` rather than imported. A module nothing has
     loaded owns no running scheduler, so there is nothing for these steps to
     stop, and importing one here to find that out is how a teardown starts the
-    very thing it means to stop: importing ``blueprints.chartink`` calls
-    ``scheduler.start()`` at module scope.
+    very thing it means to stop.
     """
     return sys.modules.get(name)
 
@@ -163,13 +162,6 @@ def _stop_historify_downloads() -> None:
     module = _imported("services.historify_service")
     if module is not None:
         module.stop_all_download_jobs()
-
-
-def _stop_chartink_scheduler() -> None:
-    """Stop the Chartink time-based control scheduler."""
-    module = _imported("blueprints.chartink")
-    if module is not None and module.scheduler.running:
-        module.scheduler.shutdown(wait=False)
 
 
 def _stop_python_strategy_scheduler() -> None:
@@ -440,7 +432,6 @@ def shutdown_runtime() -> None:
         _stop_flow_scheduler,
         _stop_historify_scheduler,
         _stop_historify_downloads,
-        _stop_chartink_scheduler,
         _stop_python_strategy_scheduler,
         _stop_squareoff_scheduler,
         _stop_strategy_module,

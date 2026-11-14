@@ -82,7 +82,6 @@ def test_racing_shutdown_callers_run_the_teardown_once(monkeypatch):
         "_stop_health_collector",
         "_stop_flow_scheduler",
         "_stop_historify_scheduler",
-        "_stop_chartink_scheduler",
         "_stop_python_strategy_scheduler",
         "_stop_squareoff_scheduler",
         "_stop_strategy_module",
@@ -103,5 +102,5 @@ def test_racing_shutdown_callers_run_the_teardown_once(monkeypatch):
     for thread in threads:
         thread.join(30)
 
-    assert len(ran) == len(set(ran)) == 9
+    assert len(ran) == len(set(ran)) == 8
     stream_registry._reset_for_tests()

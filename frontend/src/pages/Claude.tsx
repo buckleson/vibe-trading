@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { claudeApi } from '@/api/claude'
 import { ClaudeChat } from '@/components/claude/ClaudeChat'
 import { StatusDot, useClaudeState } from '@/components/claude/ClaudePanel'
+import { ConnectClaude } from '@/components/claude/ConnectClaude'
 import { cn } from '@/lib/utils'
 import { useClaudeStore } from '@/stores/claudeStore'
 
@@ -45,7 +46,12 @@ function Row({ label, value, ok }: { label: string; value: string; ok?: boolean 
       <span className="text-muted-foreground">{label}</span>
       <span className="flex items-center gap-1.5 text-right font-medium">
         {ok !== undefined && ok !== null && (
-          <span className={cn('h-1.5 w-1.5 rounded-full', ok ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
+          <span
+            className={cn(
+              'h-1.5 w-1.5 rounded-full',
+              ok ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+            )}
+          />
         )}
         {value}
       </span>
@@ -57,7 +63,11 @@ function ConnectionPanel() {
   const { status, refreshStatus, mcpState } = useClaudeStore()
   const [refreshing, setRefreshing] = useState(false)
   const [showAllSkills, setShowAllSkills] = useState(false)
-  const connect = useQuery({ queryKey: ['claude-connect'], queryFn: claudeApi.connect, staleTime: 60_000 })
+  const connect = useQuery({
+    queryKey: ['claude-connect'],
+    queryFn: claudeApi.connect,
+    staleTime: 60_000,
+  })
   const cli = status?.cli
   const ext = status?.external
 
@@ -80,8 +90,20 @@ function ConnectionPanel() {
           </button>
         </div>
         <div className="divide-y">
-          <Row label="Claude Code" value={cli?.installed ? `v${cli.version ?? '?'}` : 'Not installed'} ok={cli?.installed} />
-          <Row label="Signed in" value={cli?.logged_in ? (cli.auth_method ?? 'yes').replace('_', ' ') : 'No'} ok={cli?.logged_in} />
+          <Row
+            label="Claude Code"
+            value={cli?.installed ? `v${cli.version ?? '?'}` : 'Not installed'}
+            ok={cli?.installed}
+          />
+          <Row
+            label="Signed in"
+            value={
+              cli?.logged_in
+                ? (cli.plan?.label ?? (cli.auth_method ?? 'yes').replace('_', ' '))
+                : 'No'
+            }
+            ok={cli?.logged_in}
+          />
           <Row
             label="Platform tools"
             value={mcpState ? mcpState : status ? 'Ready' : '...'}
@@ -89,7 +111,13 @@ function ConnectionPanel() {
           />
           <Row
             label="Terminal session"
-            value={ext?.connected ? `Active ${relTime(ext.last_seen)}` : ext?.last_seen ? `Seen ${relTime(ext.last_seen)}` : 'None'}
+            value={
+              ext?.connected
+                ? `Active ${relTime(ext.last_seen)}`
+                : ext?.last_seen
+                  ? `Seen ${relTime(ext.last_seen)}`
+                  : 'None'
+            }
             ok={ext?.connected}
           />
           <Row label="Orders" value={status?.sandbox ? 'Sandbox' : status ? 'Live' : '...'} />
@@ -101,23 +129,14 @@ function ConnectionPanel() {
             />
           )}
         </div>
-        {cli && !cli.installed && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Install Claude Code on this machine with <code className="font-mono">npm i -g @anthropic-ai/claude-code</code>,
-            then run <code className="font-mono">claude auth login</code> and press Refresh.
-          </p>
-        )}
-        {cli?.installed && !cli.logged_in && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Run <code className="font-mono">claude auth login</code> in a terminal, then press Refresh.
-          </p>
-        )}
+        <ConnectClaude />
       </section>
 
       <section>
         <h3 className="mb-1 text-sm font-semibold">Use it from your terminal</h3>
         <p className="mb-2 text-xs text-muted-foreground">
-          Add the platform to Claude Code once. Any session can then trade here, and this page shows it as connected.
+          Add the platform to Claude Code once. Any session can then trade here, and this page shows
+          it as connected.
         </p>
         {connect.data ? (
           <div className="space-y-2">
@@ -134,7 +153,11 @@ function ConnectionPanel() {
         {status?.skills?.length ? (
           <ul className="flex flex-wrap gap-1.5">
             {(showAllSkills ? status.skills : status.skills.slice(0, 6)).map((s) => (
-              <li key={s.name} title={s.description} className="rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
+              <li
+                key={s.name}
+                title={s.description}
+                className="rounded-md border px-2 py-0.5 text-xs text-muted-foreground"
+              >
                 {s.name}
               </li>
             ))}
@@ -151,24 +174,38 @@ function ConnectionPanel() {
             )}
           </ul>
         ) : (
-          <p className="text-xs text-muted-foreground">No skills found. Run scripts/install_claude_skills.sh.</p>
+          <p className="text-xs text-muted-foreground">
+            No skills found. Run scripts/install_claude_skills.sh.
+          </p>
         )}
       </section>
 
       <section className="text-xs text-muted-foreground">
-        <span className="font-medium text-foreground">Access.</span> Trade lets Claude use the platform tools and web
-        research. Full access also allows shell commands and file edits in the desk folder.
+        <span className="font-medium text-foreground">Access.</span> Trade lets Claude use the
+        platform tools and web research. Full access also allows shell commands and file edits in
+        the desk folder.
       </section>
     </div>
   )
 }
 
 export default function ClaudePage() {
-  const { conversationId, openConversation, newConversation, streaming, historyVersion, access, setAccess, setPanelOpen } =
-    useClaudeStore()
+  const {
+    conversationId,
+    openConversation,
+    newConversation,
+    streaming,
+    historyVersion,
+    access,
+    setAccess,
+    setPanelOpen,
+  } = useClaudeStore()
   const { state, label, detail } = useClaudeState()
   const qc = useQueryClient()
-  const history = useQuery({ queryKey: ['claude-conversations', historyVersion], queryFn: claudeApi.conversations })
+  const history = useQuery({
+    queryKey: ['claude-conversations', historyVersion],
+    queryFn: claudeApi.conversations,
+  })
 
   // The full page replaces the side panel while it is open.
   useEffect(() => {

@@ -1808,25 +1808,7 @@ def _check_websocket_proxy():
 
 # Allowlist of broker hostnames we are willing to probe with a TCP-connect.
 # No HTTP request, no auth, no API call — just a TCP open + immediate close.
-_BROKER_PROBE_HOSTS = {
-    "zerodha": "api.kite.trade",
-    "angel": "apiconnect.angelbroking.com",
-    "dhan": "api.dhan.co",
-    "upstox": "api.upstox.com",
-    "fyers": "api.fyers.in",
-    "icici": "api.icicidirect.com",
-    "kotak": "tradeapi.kotaksecurities.com",
-    "5paisa": "openapi.5paisa.com",
-    "alice": "ant.aliceblueonline.com",
-    "iifl": "api.iiflsecurities.com",
-    "aliceblue": "ant.aliceblueonline.com",
-    "shoonya": "api.shoonya.com",
-    "flattrade": "piconnect.flattrade.in",
-    "definedge": "trading.definedgesecurities.com",
-    "wisdom": "api.wisdomcapital.in",
-    "groww": "api.groww.in",
-    "sahi": "direct.sahi.com",
-}
+_BROKER_PROBE_HOSTS = {"zerodha": "api.kite.trade"}
 
 
 def _check_active_broker_tcp():

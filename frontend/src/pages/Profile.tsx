@@ -208,11 +208,6 @@ const ALERT_CATEGORIES_TRADING: {
     label: 'Positions',
     description: 'Position close/update operations and P&L notifications',
   },
-  {
-    key: 'chartink',
-    label: 'Chartink',
-    description: 'Chartink strategy operations and scanner integrations',
-  },
 ]
 
 const ALERT_CATEGORIES_DATA: {
@@ -977,8 +972,8 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle>Server Configuration</CardTitle>
               <CardDescription>
-                Configure ngrok for receiving webhook alerts from external services like
-                TradingView, Chartink, GoCharting, etc.
+                Configure ngrok for receiving webhook alerts from external services like webhook
+                senders.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1213,7 +1208,7 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle>Trading Operations</CardTitle>
               <CardDescription>
-                Notifications from position management, strategies, and Chartink integrations
+                Notifications from position management, and strategies
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1392,9 +1387,6 @@ export default function ProfilePage() {
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>
                     <strong>Positions:</strong> Position close/update notifications
-                  </li>
-                  <li>
-                    <strong>Chartink:</strong> Chartink scanner and strategy integrations
                   </li>
                 </ul>
               </div>

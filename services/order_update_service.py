@@ -34,68 +34,8 @@ logger = get_logger(__name__)
 # broker -> (module_path, factory_name). Lazily imported so app startup does
 # not pay for (or fail on) brokers that are not in use.
 _BROKER_FACTORIES: dict[str, tuple[str, str]] = {
-    "dhan": ("broker.dhan.streaming.dhan_order_adapter", "create_dhan_order_adapter"),
-    "fyers": ("broker.fyers.streaming.fyers_order_adapter", "create_fyers_order_adapter"),
-    "upstox": ("broker.upstox.streaming.upstox_order_adapter", "create_upstox_order_adapter"),
-    "aliceblue": (
-        "broker.aliceblue.streaming.aliceblue_order_adapter",
-        "create_aliceblue_order_adapter",
-    ),
-    "definedge": (
-        "broker.definedge.streaming.definedge_order_adapter",
-        "create_definedge_order_adapter",
-    ),
-    "indmoney": (
-        "broker.indmoney.streaming.indmoney_order_adapter",
-        "create_indmoney_order_adapter",
-    ),
-    "angel": ("broker.angel.streaming.angel_order_adapter", "create_angel_order_adapter"),
     "zerodha": ("broker.zerodha.streaming.zerodha_order_adapter", "create_zerodha_order_adapter"),
-    "nubra": ("broker.nubra.streaming.nubra_order_adapter", "create_nubra_order_adapter"),
-    "arrow": ("broker.arrow.streaming.arrow_order_adapter", "create_arrow_order_adapter"),
-    "kotak": ("broker.kotak.streaming.kotak_order_adapter", "create_kotak_order_adapter"),
-    "motilal": (
-        "broker.motilal.streaming.motilal_order_adapter",
-        "create_motilal_order_adapter",
-    ),
-    "iiflcapital": (
-        "broker.iiflcapital.streaming.iiflcapital_order_adapter",
-        "create_iiflcapital_order_adapter",
-    ),
-    "shoonya": (
-        "broker.shoonya.streaming.shoonya_order_adapter",
-        "create_shoonya_order_adapter",
-    ),
-    "flattrade": (
-        "broker.flattrade.streaming.flattrade_order_adapter",
-        "create_flattrade_order_adapter",
-    ),
-    "zebu": ("broker.zebu.streaming.zebu_order_adapter", "create_zebu_order_adapter"),
-    "tradesmart": (
-        "broker.tradesmart.streaming.tradesmart_order_adapter",
-        "create_tradesmart_order_adapter",
-    ),
 }
-
-# Brokers with no *usable* push mechanism fall back to REST-orderbook polling.
-#
-# groww: no push feed at all (its public API documents only REST live data).
-#
-# samco: same — Trade API v3.2 exposes exactly one socket (wss://stream.samco.in)
-# and it carries market data only. The documented streaming_type values are
-# "quote" and "quote2"; there is no order/trade confirmation stream, postback or
-# webhook anywhere in the v3.2 reference.
-#
-# fivepaisa: it does document an OrderTradeConfirmations WebSocket, but 5Paisa
-# permits only ONE feed connection per {access_token, client_code} and a new
-# connection evicts the existing one. A dedicated order socket therefore fights
-# the market-data adapter: each evicts the other ~150ms after connecting, and
-# both flap forever (verified live 2026-08-07 — see the header of
-# broker/fivepaisa/streaming/fivepaisa_order_adapter.py). Multiplexing order
-# updates onto the market-data socket instead is not viable either: that adapter
-# runs in the websocket_proxy *subprocess* under gunicorn+eventlet and Docker, so
-# the OrderUpdateEvent would be published on the wrong process's event bus.
-_POLLING_BROKERS = {"groww", "fivepaisa", "samco"}
 
 # user_id -> live adapter (BaseOrderUpdateAdapter or PollingOrderUpdateAdapter)
 _ADAPTERS: dict[str, object] = {}
@@ -108,11 +48,6 @@ def _order_updates_enabled() -> bool:
 
 def _build_adapter(user_id: str, broker: str):
     broker = (broker or "").lower()
-
-    if broker in _POLLING_BROKERS:
-        from websocket_proxy.order_adapter import PollingOrderUpdateAdapter
-
-        return PollingOrderUpdateAdapter(broker_name=broker, user_id=user_id)
 
     entry = _BROKER_FACTORIES.get(broker)
     if entry is None:

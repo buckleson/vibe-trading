@@ -43,7 +43,7 @@ def mask_secret(value: str, show_chars: int = 4) -> str:
     Returns a FIXED-length output (``prefix + '*' * 8``) regardless of the
     original secret's length. This intentionally hides the secret's true
     length so an over-the-shoulder viewer (or a screenshot) cannot infer
-    "this is a 64-char Zerodha API secret" vs "this is a 32-char Fyers
+    "this is a 64-char Zerodha API secret" vs "this is a 32-char
     secret" from the asterisk count.
 
     The fixed-length mask also keeps the rendered value bounded so a long

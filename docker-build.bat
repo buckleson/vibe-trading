@@ -148,10 +148,10 @@ echo   Shell access:     docker-compose exec openalgo bash
 echo.
 
 REM Detect configured broker
-findstr /C:"fyers" .env >nul 2>nul
+findstr /C:"zerodha" .env >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo Configured Broker: Fyers
-    echo Callback URL: http://127.0.0.1:5000/fyers/callback
+    echo Configured Broker: Zerodha
+    echo Callback URL: http://127.0.0.1:5000/zerodha/callback
 )
 
 echo.

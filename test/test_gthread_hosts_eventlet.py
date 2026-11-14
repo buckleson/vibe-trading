@@ -2,7 +2,7 @@
 
 Everything in the hosts partition that a trader could notice is gated on the
 gthread worker: the resource limit bootstrap, the live stream cap and lifetime,
-the early shutdown hooks and Chartink's in-process orders. The race fixes
+the early shutdown hooks. The race fixes
 (locks, claims, single flight, snapshots) apply everywhere, and under eventlet
 they must be green primitives that never block the hub.
 
@@ -51,7 +51,6 @@ def test_the_hosts_take_their_eventlet_paths():
     result = run(
         """
         from blueprints import python_strategy as ps
-        from blueprints import chartink
         from services import openscript_runner_service as svc
         from utils import runtime, stream_registry
 
@@ -73,14 +72,6 @@ def test_the_hosts_take_their_eventlet_paths():
         ps._shutdown_hook()
         svc._shutdown_hook()
         assert called == [], called
-
-        # Chartink posts its orders to the API as before.
-        posted = []
-        chartink.requests.post = lambda url, json=None, timeout=None: (
-            posted.append(url) or type("R", (), {"ok": True, "text": "ok"})()
-        )
-        ok, _ = chartink._place("placeorder", {"symbol": "SBIN"})
-        assert ok and posted == [chartink.BASE_URL + "/api/v1/placeorder"], posted
 
         # The race fixes use green primitives: a manual stop is still honoured
         # through the reentrant PROCESS_LOCK.

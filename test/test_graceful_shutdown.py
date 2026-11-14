@@ -53,7 +53,6 @@ _STEP_NAMES = (
     "_stop_flow_scheduler",
     "_stop_historify_scheduler",
     "_stop_historify_downloads",
-    "_stop_chartink_scheduler",
     "_stop_python_strategy_scheduler",
     "_stop_squareoff_scheduler",
     "_stop_strategy_module",
@@ -80,8 +79,8 @@ def _no_real_schedulers(monkeypatch):
 
     The scheduler steps look the process up in ``sys.modules``, and a full
     pytest run imports most of this repository, so without this a test about
-    ordering would really shut down the Chartink scheduler that importing
-    ``blueprints.chartink`` starts. A test that wants a real step restores it
+    ordering would really shut down a scheduler that importing a blueprint
+    starts. A test that wants a real step restores it
     from ``_REAL``; a later ``monkeypatch.setattr`` wins over this one.
     """
     for name in _STEP_NAMES:
@@ -293,19 +292,6 @@ def test_an_operator_stopping_the_engine_still_waits():
 
     signature = inspect.signature(stop_squareoff_scheduler)
     assert signature.parameters["wait"].default is True
-
-
-def test_a_scheduler_module_nothing_imported_is_not_imported_to_stop_it(monkeypatch):
-    """Importing ``blueprints.chartink`` starts a scheduler at module scope.
-
-    So a teardown that imports it to ask whether it is running would start, on
-    the way out, the very thing it is there to stop.
-    """
-    monkeypatch.delitem(sys.modules, "blueprints.chartink", raising=False)
-
-    _REAL["_stop_chartink_scheduler"]()
-
-    assert "blueprints.chartink" not in sys.modules
 
 
 def test_the_websocket_proxy_is_stopped_before_the_interpreter_joins_threads(monkeypatch):

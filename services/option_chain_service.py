@@ -580,64 +580,17 @@ def get_option_chain(
                         500,
                     )
             else:
-                # Fyers fast path: its native /data/options-chain-v3 endpoint
-                # returns every CE/PE strike (LTP, OI, bid/ask, volume) in ONE
-                # call, instead of a bulk /data/quotes call plus one
-                # /data/depth call PER symbol just to backfill OI (Fyers'
-                # bulk quotes endpoint doesn't include OI at all). The
-                # per-symbol depth fallback is what made large chains take
-                # 10+ seconds. Only usable when a bounded strike_count was
-                # requested -- Fyers caps strikecount at 50, so an
-                # unbounded "entire chain" request (strike_count=None) still
-                # needs the generic path.
-                used_fast_path = False
-                if strike_count is not None and strike_count <= 50:
-                    _auth, _, _broker = get_auth_token_broker(api_key, include_feed_token=True)
-                    if _broker == "fyers" and _auth:
-                        _bmod = import_broker_module(_broker)
-                        if _bmod is not None and hasattr(_bmod.BrokerData, "get_option_chain"):
-                            try:
-                                fyers_symbol = get_br_symbol(quote_symbol, quote_exchange)
-                                _dh = _bmod.BrokerData(_auth)
-                                # +2 buffer absorbs Fyers computing its own ATM a
-                                # strike off from ours; harmless if unused, and
-                                # still capped at Fyers' hard max of 50.
-                                fyers_chain = _dh.get_option_chain(
-                                    fyers_symbol, strikecount=min(strike_count + 2, 50)
-                                )
-                                for item in chain_symbols:
-                                    strike = item["strike"]
-                                    if item["ce"]["exists"]:
-                                        data = fyers_chain.get((strike, "CE"))
-                                        if data:
-                                            quotes_map[item["ce"]["symbol"]] = data
-                                    if item["pe"]["exists"]:
-                                        data = fyers_chain.get((strike, "PE"))
-                                        if data:
-                                            quotes_map[item["pe"]["symbol"]] = data
-                                used_fast_path = bool(fyers_chain)
-                            except BrokerBusyError:
-                                raise
-                            except Exception as _fe:
-                                logger.warning(
-                                    f"Fyers fast-path option chain failed, falling back to "
-                                    f"generic multiquotes: {_fe}"
-                                )
-                                quotes_map = {}
-
-                if not used_fast_path:
-                    success, quotes_response, status_code = get_multiquotes(
-                        symbols=symbols_to_fetch, api_key=api_key
-                    )
-                    if not success and is_broker_busy(status_code):
-                        # Refused before reaching the broker (gthread only).
-                        # A chain of zero prices would look like a dead
-                        # market, so say what happened instead.
-                        return False, quotes_response, status_code
+                success, quotes_response, status_code = get_multiquotes(
+                    symbols=symbols_to_fetch, api_key=api_key
+                )
+                if not success and is_broker_busy(status_code):
+                    # Refused before reaching the broker (gthread only).
+                    # A chain of zero prices would look like a dead
+                    # market, so say what happened instead.
+                    return False, quotes_response, status_code
 
             # Build the quote lookup map from whichever branch produced results.
-            # The Fyers fast path is the only one that fills quotes_map itself;
-            # both the crypto per-symbol loop and the generic multiquotes call
+            # Both the crypto per-symbol loop and the generic multiquotes call
             # hand back a results list that still has to be indexed here.
             if not quotes_map and success and "results" in quotes_response:
                 for result in quotes_response["results"]:

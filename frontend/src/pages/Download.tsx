@@ -135,7 +135,7 @@ const products: Product[] = [
         title: 'Works like Buckleson web',
         items: [
           'The same screens, REST API and market data WebSocket, on the same addresses (127.0.0.1:5000 and 8765).',
-          'Connects to all 38 brokers of Buckleson web, Delta Exchange for crypto among them.',
+          'Connects to Buckleson web: paper trading and Zerodha.',
           'TradingView, Amibroker, Excel, the Python SDK and MCP clients connect to it unchanged.',
         ],
       },

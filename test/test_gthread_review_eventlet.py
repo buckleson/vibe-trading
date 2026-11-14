@@ -54,44 +54,6 @@ def _ok(result: subprocess.CompletedProcess) -> None:
     assert "PASSED" in result.stdout, result.stdout[-2000:]
 
 
-def test_chartink_restores_nothing_and_schedulers_keep_their_defaults():
-    """eventlet-neutrality-01, -04 and hosts-messaging-02."""
-    _ok(
-        run(
-            """
-            from blueprints import chartink
-            from blueprints import python_strategy as ps
-
-            # Nothing booked at import, and the scheduler has APScheduler's own
-            # one second misfire grace, as on main.
-            assert chartink.scheduler.get_job(chartink._SQUAREOFF_RESTORE_JOB_ID) is None
-            assert chartink.scheduler._job_defaults["misfire_grace_time"] == 1
-            ps.init_scheduler()
-            assert ps.SCHEDULER._job_defaults["misfire_grace_time"] == 1
-
-            # Even called directly, the restore reads nothing and books nothing.
-            reads = []
-
-            class Query:
-                @staticmethod
-                def all():
-                    reads.append(1)
-                    return [SimpleNamespace(id=1, is_intraday=True, squareoff_time="15:10",
-                                            is_active=False)]
-
-            chartink.ChartinkStrategy = SimpleNamespace(query=Query)
-            assert chartink.restore_squareoff_jobs() is True
-            chartink._restore_squareoff_on_activation(
-                SimpleNamespace(id=1, is_intraday=True, squareoff_time="15:10", is_active=True)
-            )
-            assert reads == []
-            assert chartink.scheduler.get_job("squareoff_1") is None
-            print("PASSED")
-            """
-        )
-    )
-
-
 def test_symbol_reload_drops_the_previous_generation_first():
     """core-01: two symbol universes at once raised the peak on every install."""
     _ok(

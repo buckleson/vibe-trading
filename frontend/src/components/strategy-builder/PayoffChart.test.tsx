@@ -316,37 +316,6 @@ describe('PayoffChart exact geometry', () => {
     }
   })
 
-  it('formats Delta Exchange hover values in USD without a rupee chart label', () => {
-    const payoff = computePayoff(
-      [leg('call', 'BUY', 'CE', 100, 2)],
-      100,
-      7,
-      0,
-      [80, 120],
-      12,
-      0,
-      20,
-      NOW
-    )
-
-    render(
-      <PayoffChart
-        title="USD Call"
-        scenario={BASE_SCENARIO}
-        remainingYears={7 / 365}
-        payoff={payoff}
-        formatCurrency={makeFormatCurrency('deltaexchange')}
-      />
-    )
-
-    const expiry = plotCapture.props?.data.find((trace) => trace.name === 'At Expiry')
-    const customdata = expiry?.customdata as unknown as string[][]
-    expect(customdata[0][0]).toBe('$80.00')
-    expect(customdata[0][2]).toMatch(/^[-$]/)
-    expect(plotCapture.props?.layout.yaxis?.title?.text).toBe('Profit / Loss')
-    expect(expiry?.hovertemplate).not.toContain('₹')
-  })
-
   it('SB-18 supplements the visual plot with a named summary and representative payoff table', () => {
     const payoff = computePayoff(
       [leg('call', 'BUY', 'CE', 100, 2)],

@@ -160,8 +160,7 @@ do_setup() {
         sed -i "s/OPENALGO_PLACEHOLDER_API_KEY_PEPPER_REGENERATE_BEFORE_USE/$API_KEY_PEPPER/g" "$OPENALGO_DIR/$ENV_FILE"
     fi
     # No broker in .env: the trader adds broker keys in OpenAlgo after signing
-    # in (Broker Configuration). VALID_BROKERS keeps the full list of brokers keys can
-    # be saved for.
+    # in (Broker Configuration). VALID_BROKERS lists Sandbox (No Broker) and Zerodha.
     local sed_inplace
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed_inplace=(sed -i '')
@@ -482,9 +481,6 @@ do_help() {
     echo "  - Database:   $OPENALGO_DIR/db/"
     echo "  - Strategies: $OPENALGO_DIR/strategies/"
     echo "  - Logs:       $OPENALGO_DIR/log/"
-    echo ""
-    echo "XTS Brokers (require market data credentials):"
-    echo "  fivepaisaxts, compositedge, ibulls, iifl, jainamxts, rmoney, wisdom"
     echo ""
 }
 

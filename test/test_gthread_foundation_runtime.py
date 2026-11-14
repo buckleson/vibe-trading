@@ -56,24 +56,12 @@ FOUNDATION_MODULES = [
 #: Modules whose eventlet guard was swept, and the attribute that guard sets.
 GUARDED_THREADING_ATTRS = [
     ("websocket_proxy.app_integration", "_original_threading"),
-    ("broker.arrow.streaming.arrow_websocket", "_real_threading"),
-    ("broker.dhan_sandbox.streaming.dhan_websocket", "_original_threading"),
-    ("broker.hdfcsecurities.api.data", "_real_threading"),
-    ("broker.hdfcsecurities.streaming.hdfcsecurities_adapter", "_real_threading"),
-    ("broker.hdfcsecurities.streaming.hdfcsecurities_websocket", "_real_threading"),
-    ("broker.hdfcsky.api.data", "_real_threading"),
-    ("broker.hdfcsky.streaming.hdfcsky_websocket", "_real_threading"),
     ("broker.zerodha.streaming.zerodha_adapter", "_real_threading"),
     ("broker.zerodha.streaming.zerodha_websocket", "_real_threading"),
     ("services.telegram_bot_service", "original_threading"),
 ]
 
-USE_ASYNC_MODULES = [
-    "broker.flattrade.api.data",
-    "broker.definedge.api.data",
-    "broker.shoonya.api.data",
-    "broker.zebu.api.data",
-]
+USE_ASYNC_MODULES: list[str] = []
 
 
 def _child_env(tmp_path: Path) -> dict:

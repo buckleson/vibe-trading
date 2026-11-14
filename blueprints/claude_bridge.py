@@ -18,6 +18,14 @@ The CLI runs in a dedicated desk workspace (``BUCKLESON_DESK_DIR``, default
 CLAUDE.md with the desk instructions and the installed web skills, and none of
 this repository's developer instructions.
 
+Sign-in: ``GET /claude/api/status`` reports the detected plan (Pro, Max, Team,
+Enterprise, Console API key, Bedrock, Vertex) from ``claude auth status --json``
+and the environment. ``POST /claude/api/login`` runs ``claude auth login`` in the
+background, captures the sign-in link it prints into a log file, and the page
+polls ``GET /claude/api/login`` until the CLI reports connected. Process
+discovery and stopping work on Windows (claude.exe/claude.cmd, taskkill /T) and
+on macOS/Linux (process groups).
+
 Local-mode only by design: the routes require the operator's session, which
 local mode gives every browser on the bound address.
 """
@@ -29,9 +37,11 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 import uuid
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -95,16 +105,37 @@ ACCESS_LEVELS: dict[str, dict[str, Any]] = {
 HEARTBEAT_WINDOW_SECONDS = 15 * 60
 MAX_TURN_SECONDS = int(os.getenv("CLAUDE_BRIDGE_MAX_TURN_SECONDS", "900"))
 STATUS_CACHE_SECONDS = 30
+LOGIN_LOG = STORE_DIR / "login.log"
+LOGIN_TIMEOUT_SECONDS = 600
 
 _lock = threading.Lock()
 _running: dict[str, subprocess.Popen] = {}
 _status_cache: dict[str, Any] = {"at": 0.0, "value": None}
+_login: dict[str, Any] = {"proc": None, "method": None, "started": 0.0}
 _external: dict[str, Any] = {"last_seen": None, "last_tool": None, "calls": 0, "client": None}
 
 
 # --------------------------------------------------------------------------- #
 # Paths and the desk workspace
 # --------------------------------------------------------------------------- #
+
+
+def candidate_paths() -> list[Path]:
+    """Places the CLI installers put ``claude`` when it is not on PATH."""
+    if os.name == "nt":
+        found: list[Path] = []
+        profile, appdata = os.environ.get("USERPROFILE"), os.environ.get("APPDATA")
+        if profile:
+            found += [Path(profile) / ".local" / "bin" / "claude.exe", Path(profile) / ".claude" / "local" / "claude.exe"]
+        if appdata:
+            found += [Path(appdata) / "npm" / "claude.cmd", Path(appdata) / "npm" / "claude.exe"]
+        return found
+    return [
+        Path.home() / ".claude" / "local" / "claude",
+        Path.home() / ".local" / "bin" / "claude",
+        Path("/usr/local/bin/claude"),
+        Path("/opt/homebrew/bin/claude"),
+    ]
 
 
 def claude_binary() -> str | None:
@@ -115,12 +146,7 @@ def claude_binary() -> str | None:
     found = shutil.which("claude")
     if found:
         return found
-    for candidate in (
-        Path.home() / ".claude" / "local" / "claude",
-        Path.home() / ".local" / "bin" / "claude",
-        Path("/usr/local/bin/claude"),
-        Path("/opt/homebrew/bin/claude"),
-    ):
+    for candidate in candidate_paths():
         if candidate.exists():
             return str(candidate)
     return None
@@ -249,13 +275,80 @@ def _run_quick(args: list[str], timeout: float = 20) -> tuple[int, str]:
         return -1, str(exc)
 
 
+PLAN_LABELS = {
+    "pro": "Claude Pro",
+    "max": "Claude Max",
+    "team": "Claude Team",
+    "enterprise": "Claude Enterprise",
+    "free": "Claude Free",
+}
+PROVIDER_LABELS = {"bedrock": "Amazon Bedrock", "vertex": "Google Vertex AI", "foundry": "Microsoft Foundry"}
+
+
+def _subscription_value(info: dict[str, Any], credentials: dict[str, Any]) -> str | None:
+    oauth = credentials.get("claudeAiOauth")
+    candidates = [info.get("subscriptionType"), info.get("subscription"), info.get("plan")]
+    candidates.append(oauth.get("subscriptionType") if isinstance(oauth, dict) else None)
+    for value in candidates:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def detect_plan(info: dict | None, environ: Mapping[str, str] | None = None, credentials: dict | None = None) -> dict[str, Any]:
+    """Which Claude plan or auth method the CLI is using. Pure: no I/O."""
+    info = info or {}
+    environ = os.environ if environ is None else environ
+    credentials = credentials or {}
+    provider = info.get("apiProvider")
+    if provider not in PROVIDER_LABELS:
+        provider = next((name for name in PROVIDER_LABELS if environ.get(f"CLAUDE_CODE_USE_{name.upper()}") in ("1", "true")), None)
+    if provider:
+        return {"key": provider, "label": PROVIDER_LABELS[provider]}
+    subscription = _subscription_value(info, credentials)
+    if subscription:
+        key = subscription.lower()
+        return {"key": key, "label": PLAN_LABELS.get(key, "Claude " + key.title())}
+    if info.get("authMethod") in ("api_key", "apiKey", "console") or (not info.get("loggedIn") and environ.get("ANTHROPIC_API_KEY")):
+        return {"key": "api_key", "label": "Anthropic API key"}
+    if info.get("loggedIn"):
+        return {"key": "subscription", "label": "Claude subscription"}
+    return {"key": None, "label": None}
+
+
+def read_plan_credentials() -> dict[str, Any]:
+    """The subscription type from the CLI's credentials file. Never returns a token."""
+    base = os.getenv("CLAUDE_CONFIG_DIR", "").strip()
+    path = (Path(base).expanduser() if base else Path.home() / ".claude") / ".credentials.json"
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))["claudeAiOauth"]["subscriptionType"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return {}
+    return {"claudeAiOauth": {"subscriptionType": value}} if isinstance(value, str) else {}
+
+
+def install_info() -> dict[str, Any]:
+    """How to install the CLI, for the page to show when it is missing."""
+    platform = {"win32": "windows", "darwin": "mac"}.get(sys.platform, "linux")
+    return {
+        "platform": platform,
+        "commands": {
+            "windows": "irm https://claude.ai/install.ps1 | iex",
+            "unix": "curl -fsSL https://claude.ai/install.sh | bash",
+            "npm": "npm install -g @anthropic-ai/claude-code",
+        },
+        "docs": "https://docs.claude.com/en/docs/claude-code/setup",
+    }
+
+
 def cli_status(force: bool = False) -> dict[str, Any]:
     """Whether the CLI is installed and signed in. Cached for a few seconds."""
     now = time.monotonic()
     if not force and _status_cache["value"] and now - _status_cache["at"] < STATUS_CACHE_SECONDS:
         return _status_cache["value"]
     binary = claude_binary()
-    value: dict[str, Any] = {"installed": bool(binary), "path": binary, "version": None, "logged_in": False, "auth_method": None}
+    value: dict[str, Any] = {"installed": bool(binary), "path": binary, "version": None, "logged_in": False, "auth_method": None, "api_provider": None, "subscription": None, "plan": detect_plan(None, {})}
+    info: dict[str, Any] = {}
     if binary:
         code, out = _run_quick([binary, "--version"], timeout=15)
         if code == 0:
@@ -266,11 +359,18 @@ def cli_status(force: bool = False) -> dict[str, Any]:
                 info = json.loads(out)
                 value["logged_in"] = bool(info.get("loggedIn"))
                 value["auth_method"] = info.get("authMethod")
+                value["api_provider"] = info.get("apiProvider")
             except json.JSONDecodeError:
+                info = {}
                 value["logged_in"] = "logged in" in out.lower()
+            if not isinstance(info, dict):
+                info = {}
         elif os.getenv("ANTHROPIC_API_KEY"):
             value["logged_in"] = True
             value["auth_method"] = "api_key"
+        credentials = read_plan_credentials()
+        value["subscription"] = _subscription_value(info, credentials)
+        value["plan"] = detect_plan(info, os.environ, credentials)
     _status_cache.update(at=now, value=value)
     return value
 
@@ -336,6 +436,8 @@ def status():
         {
             "status": "success",
             "cli": cli,
+            "install": install_info(),
+            "login": login_view(),
             "in_app": {"ready": cli["installed"] and cli["logged_in"], "running": active},
             "external": external_status(),
             "connected": (cli["installed"] and cli["logged_in"]) or external_status()["connected"],
@@ -539,7 +641,7 @@ def chat():
             text=True,
             bufsize=1,
             env=env,
-            start_new_session=(os.name != "nt"),
+            **spawn_kwargs(),
         )
     except Exception:
         logger.exception("Could not start the Claude CLI")
@@ -648,19 +750,31 @@ def _sse(obj: dict[str, Any]) -> str:
     return f"data: {json.dumps(obj, default=str)}\n\n"
 
 
-def _terminate(proc: subprocess.Popen) -> None:
+def spawn_kwargs() -> dict[str, Any]:
+    """Popen options that put the CLI in its own process group, per platform."""
+    if os.name == "nt":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | getattr(subprocess, "CREATE_NO_WINDOW", 0)}
+    return {"start_new_session": True}
+
+
+def kill_tree(proc: subprocess.Popen, force: bool = False) -> None:
+    """Stop the CLI and everything it started."""
     if proc.poll() is not None:
         return
     try:
-        if os.name != "nt":
-            os.killpg(proc.pid, signal.SIGTERM)
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=10)
         else:
-            proc.terminate()
+            os.killpg(proc.pid, signal.SIGKILL if force else signal.SIGTERM)
     except Exception:
         try:
-            proc.terminate()
+            proc.kill() if force or os.name == "nt" else proc.terminate()
         except Exception:
-            pass
+            logger.debug("Could not stop the Claude CLI process", exc_info=True)
+
+
+def _terminate(proc: subprocess.Popen) -> None:
+    kill_tree(proc)
 
 
 def _reap(proc: subprocess.Popen) -> None:
@@ -668,10 +782,7 @@ def _reap(proc: subprocess.Popen) -> None:
         proc.wait(timeout=10)
     except Exception:
         try:
-            if os.name != "nt":
-                os.killpg(proc.pid, signal.SIGKILL)
-            else:
-                proc.kill()
+            kill_tree(proc, force=True)
             proc.wait(timeout=5)
         except Exception:
             logger.debug("Could not reap the Claude CLI process", exc_info=True)
@@ -680,3 +791,141 @@ def _reap(proc: subprocess.Popen) -> None:
             proc.stdout.close()
     except Exception:
         pass
+
+
+# --------------------------------------------------------------------------- #
+# One-click sign-in: ``claude auth login`` in the background
+# --------------------------------------------------------------------------- #
+
+IDLE_LOGIN = {"state": "idle", "url": None, "needs_code": False, "method": None, "message": None}
+
+
+def parse_login_output(text: str) -> tuple[str | None, bool]:
+    """The sign-in link the CLI printed, and whether it waits for a pasted code."""
+    url = next((t for t in text.split() if t.startswith("https://") and ("oauth" in t or "authorize" in t)), None)
+    return url, "paste code" in text.lower()
+
+
+def _read_login_log() -> str:
+    try:
+        return LOGIN_LOG.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _finish_login(proc: subprocess.Popen, view: dict[str, Any]) -> dict[str, Any]:
+    """Reap an ended login process and remember its outcome. Caller holds ``_lock``."""
+    try:
+        if proc.stdin:
+            proc.stdin.close()
+    except Exception:
+        pass
+    try:
+        proc.wait(timeout=5)
+    except Exception:
+        logger.debug("Could not reap the Claude sign-in process", exc_info=True)
+    _login.update(proc=None, result=view)
+    return view
+
+
+def login_view() -> dict[str, Any]:
+    """Where the sign-in stands, for the page to poll."""
+    with _lock:
+        proc = _login.get("proc")
+        method = _login.get("method")
+        if proc is None:
+            return dict(_login.get("result") or IDLE_LOGIN)
+        code = proc.poll()
+        if code is None:
+            if time.time() - _login.get("started", 0.0) > LOGIN_TIMEOUT_SECONDS:
+                kill_tree(proc)
+                return _finish_login(proc, {**IDLE_LOGIN, "state": "failed", "method": method, "message": "The sign-in link expired. Press Connect Claude to start again."})
+            url, needs_code = parse_login_output(_read_login_log())
+            return {**IDLE_LOGIN, "state": "waiting" if url else "starting", "url": url, "needs_code": needs_code if url else False, "method": method}
+        if code == 0:
+            _status_cache.update(at=0.0, value=None)
+            connected = cli_status(force=True)["logged_in"]
+            message = None if connected else "Sign-in did not finish. Press Connect Claude to try again."
+            return _finish_login(proc, {**IDLE_LOGIN, "state": "connected" if connected else "failed", "method": method, "message": message})
+        return _finish_login(proc, {**IDLE_LOGIN, "state": "failed", "method": method, "message": "Sign-in did not finish. Press Connect Claude to try again."})
+
+
+@claude_bp.route("/login", methods=["POST"])
+@check_session_validity
+def start_login():
+    method = (request.get_json(silent=True) or {}).get("method") or "claudeai"
+    if method not in ("claudeai", "console"):
+        return jsonify({"status": "error", "message": "Choose a Claude subscription or a Console account."}), 400
+    binary = claude_binary()
+    if not binary:
+        return jsonify({"status": "error", "message": "Claude Code is not installed on this machine. Install it, then press Refresh.", "install": install_info()}), 409
+    if cli_status(force=True)["logged_in"]:
+        return jsonify({"status": "success", "login": {**IDLE_LOGIN, "state": "connected", "method": method}})
+    with _lock:
+        running = _login.get("proc")
+        if running is not None and running.poll() is None:
+            pass
+        else:
+            running = None
+    if running is not None:
+        return jsonify({"status": "success", "login": login_view()})
+    env = dict(os.environ)
+    env.pop("CLAUDECODE", None)
+    try:
+        STORE_DIR.mkdir(parents=True, exist_ok=True)
+        with open(LOGIN_LOG, "w", encoding="utf-8") as log:
+            proc = subprocess.Popen(
+                [binary, "auth", "login"] + (["--console"] if method == "console" else []),
+                cwd=str(desk_dir()),
+                stdin=subprocess.PIPE,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=env,
+                **spawn_kwargs(),
+            )
+    except Exception:
+        logger.exception("Could not start the Claude sign-in")
+        return jsonify({"status": "error", "message": "Claude Code could not start the sign-in. Run claude auth login in a terminal instead."}), 500
+    with _lock:
+        _login.update(proc=proc, method=method, started=time.time(), result=None)
+    return jsonify({"status": "success", "login": login_view()})
+
+
+@claude_bp.route("/login", methods=["GET"])
+@check_session_validity
+def get_login():
+    return jsonify({"status": "success", "login": login_view()})
+
+
+@claude_bp.route("/login/code", methods=["POST"])
+@check_session_validity
+def submit_login_code():
+    code = str((request.get_json(silent=True) or {}).get("code") or "").strip()
+    if not code or len(code) > 4000:
+        return jsonify({"status": "error", "message": "Paste the code shown after you signed in."}), 400
+    with _lock:
+        proc = _login.get("proc")
+        if proc is None or proc.poll() is not None or proc.stdin is None:
+            proc = None
+        else:
+            try:
+                proc.stdin.write(code + "\n")
+                proc.stdin.flush()
+            except OSError:
+                logger.exception("Could not pass the sign-in code to Claude Code")
+    if proc is None:
+        return jsonify({"status": "error", "message": "No sign-in is in progress. Press Connect Claude first."}), 409
+    return jsonify({"status": "success", "login": login_view()})
+
+
+@claude_bp.route("/login", methods=["DELETE"])
+@check_session_validity
+def cancel_login():
+    with _lock:
+        proc = _login.get("proc")
+        if proc is not None:
+            kill_tree(proc)
+            _finish_login(proc, dict(IDLE_LOGIN))
+        _login.update(proc=None, method=None, started=0.0, result=None)
+    return jsonify({"status": "success", "login": dict(IDLE_LOGIN)})

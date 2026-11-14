@@ -53,25 +53,4 @@ describe('PnLTab closed-leg boundary', () => {
     )
   })
 
-  it('uses the injected formatter for prices and P&L', () => {
-    mocks.useMarketData.mockReturnValue({
-      data: new Map(),
-      isConnected: false,
-      isPaused: false,
-      isFallbackMode: false,
-    })
-
-    render(
-      <PnLTab
-        legs={[closedAtZero()]}
-        fnoExchange="NFO"
-        fallbackPrices={{}}
-        formatCurrency={makeFormatCurrency('deltaexchange')}
-      />
-    )
-
-    expect(screen.getByText('$0.00')).toBeVisible()
-    expect(screen.getAllByText('-$2,500.00')).toHaveLength(2)
-    expect(screen.getByRole('table')).not.toHaveTextContent('₹')
-  })
 })

@@ -10,21 +10,20 @@ import {
 describe('Navigation Config', () => {
   describe('navItems', () => {
     it('contains the expected main navigation items', () => {
-      expect(navItems).toHaveLength(9)
+      expect(navItems).toHaveLength(8)
 
       const labels = navItems.map((item) => item.label)
       expect(labels).toContain('Dashboard')
       expect(labels).toContain('Tools')
       expect(labels).toContain('Orderbook')
       expect(labels).toContain('Positions')
-      expect(labels).toContain('Platforms')
       expect(labels).toContain('Trading')
       expect(labels).toContain('Strategies')
 
-      // Strategies sits directly after Platforms. Asserting the position, not
+      // Strategies sits directly after Trading. Asserting the position, not
       // just its presence, is the point: it is where the user expects to find
       // it, and a later insertion that pushed it elsewhere should fail here.
-      expect(labels.indexOf('Strategies')).toBe(labels.indexOf('Platforms') + 1)
+      expect(labels.indexOf('Strategies')).toBe(labels.indexOf('Trading') + 1)
     })
 
     it('all items have required properties', () => {
@@ -62,7 +61,6 @@ describe('Navigation Config', () => {
     it('contains remaining nav items', () => {
       const sheetLabels = mobileSheetItems.map((item) => item.label)
       expect(sheetLabels).toContain('Trading')
-      expect(sheetLabels).toContain('Platforms')
       expect(sheetLabels).toContain('Logs')
     })
   })

@@ -36,12 +36,12 @@ const faqData = [
       {
         question: 'What is Buckleson?',
         answer:
-          'Buckleson is an open-source algorithmic trading platform that provides a unified API layer across 36 broker plugins: 35 securities integrations and Delta Exchange for crypto derivatives. It enables seamless integration with TradingView, Amibroker, Excel, Python, and AI agents, allowing traders to automate their trading strategies without being locked into a single broker.',
+          'Buckleson is an open-source algorithmic trading platform that provides a unified API layer over Zerodha, plus a built-in Sandbox for paper trading and backtesting without a broker. It integrates with Excel, Python, and AI agents, allowing traders to automate their trading strategies.',
       },
       {
         question: 'Which brokers are supported?',
         answer:
-          'Buckleson supports 36 broker plugins: 5 Paisa, 5 Paisa (XTS), Alice Blue, Angel One, Arrow, CompositEdge, Definedge, Delta Exchange, Dhan, Dhan (Sandbox), Firstock, Flattrade, Fyers, Groww, HDFC Securities, HDFC Sky, Ibulls, IIFL, IIFL Capital, IndMoney, JainamXts, Kotak Securities, Motilal Oswal, mStock by Mirae Asset, Nubra, Paytm Money, Pocketful, RMoney, Samco, Shoonya (Finvasia), TradeSmart, Tradejini, Upstox, Wisdom Capital, Zebu and Zerodha. Delta Exchange is a crypto exchange; the rest are Indian brokers. New brokers are being added regularly.',
+          'Buckleson supports Zerodha for live trading, and a built-in Sandbox (paper broker) that needs no broker account for paper trading and backtesting.',
       },
       {
         question: 'What are the system requirements?',
@@ -81,7 +81,7 @@ const faqData = [
       {
         question: 'Which platforms can I integrate with Buckleson?',
         answer:
-          'Buckleson integrates with TradingView (via webhooks), Amibroker (via AFL), GoCharting, ChartInk, MetaTrader, Excel, Google Sheets, Python, Node.js, Go, N8N, and any platform that can send HTTP webhooks. You can also use the REST API directly from any programming language.',
+          'Buckleson integrates with MetaTrader, Excel, Google Sheets, Python, Node.js, Go, N8N, and any platform that can send HTTP webhooks. You can also use the REST API directly from any programming language.',
       },
       {
         question: 'Does Buckleson support sandbox trading?',

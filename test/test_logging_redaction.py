@@ -150,7 +150,6 @@ def test_a_record_whose_arguments_do_not_match_is_still_emitted():
     [
         (f"/strategy/webhook/{URL_CREDENTIAL}", None),
         (f"/flow/webhook/{URL_CREDENTIAL}/NIFTY", "NIFTY"),
-        (f"/chartink/webhook/{URL_CREDENTIAL}", None),
     ],
 )
 def test_shared_url_redactor_masks_every_shipped_url_secret_route(path, visible_tail):
@@ -197,7 +196,6 @@ def test_the_oauth_state_is_masked_like_a_code():
     [
         f"/strategy/webhook/{URL_CREDENTIAL}",
         f"/flow/webhook/{URL_CREDENTIAL}/NIFTY",
-        f"/chartink/webhook/{URL_CREDENTIAL}",
     ],
 )
 def test_json_error_formatter_never_emits_a_request_url_credential(path):

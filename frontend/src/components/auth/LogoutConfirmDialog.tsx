@@ -26,10 +26,7 @@ export function LogoutConfirmDialog({ open, onOpenChange, onConfirm }: LogoutCon
               <p>Are you sure you want to logout? Once logged out:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>All automated orders and running strategies will stop working.</li>
-                <li>
-                  External signals from TradingView, ChartInk, or any other source will not be
-                  processed.
-                </li>
+                <li>Webhook and REST API signals will not be processed.</li>
                 <li>Open positions will remain as-is but will not be managed automatically.</li>
                 <li className="font-medium text-destructive">
                   All devices connected to this account will be logged out immediately.

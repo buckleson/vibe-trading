@@ -40,44 +40,7 @@ logger = get_logger(__name__)
 # The names traders see for each plugin, matching the broker picker on the
 # login page (frontend/src/pages/BrokerSelect.tsx).
 BROKER_DISPLAY_NAMES = {
-    "aliceblue": "Alice Blue",
-    "angel": "Angel One",
-    "arrow": "Arrow",
-    "compositedge": "CompositEdge",
-    "definedge": "Definedge",
-    "deltaexchange": "Delta Exchange",
-    "dhan": "Dhan",
-    "dhan_sandbox": "Dhan (Sandbox)",
-    "firstock": "Firstock",
-    "fivepaisa": "5 Paisa",
-    "fivepaisaxts": "5 Paisa (XTS)",
-    "flattrade": "Flattrade",
-    "fyers": "Fyers",
-    "groww": "Groww",
-    "hdfcsecurities": "HDFC Securities",
-    "hdfcsky": "HDFC Sky",
-    "ibulls": "Ibulls",
-    "iifl": "IIFL",
-    "iiflcapital": "IIFL Capital",
-    "indmoney": "IndMoney",
-    "jainamxts": "JainamXts",
-    "kotak": "Kotak Securities",
-    "motilal": "Motilal Oswal",
-    "mstock": "mStock by Mirae Asset",
-    "nubra": "Nubra",
     "paper": "Sandbox (No Broker)",
-    "paytm": "Paytm Money",
-    "pocketful": "Pocketful",
-    "rmoney": "RMoney",
-    "rupeezy": "Rupeezy",
-    "sahi": "Sahi",
-    "samco": "Samco",
-    "shoonya": "Shoonya",
-    "tradejini": "Tradejini",
-    "tradesmart": "TradeSmart",
-    "upstox": "Upstox",
-    "wisdom": "Wisdom Capital",
-    "zebu": "Zebu",
     "zerodha": "Zerodha",
 }
 
@@ -118,41 +81,13 @@ MESSAGE_FIELDS = (
     "error.msg",
 )
 
-# The brokers whose empty position book can come back as their error envelope
-# with a message, rather than as a success with an empty list, and the fields
-# that carry that message. A broker listed here keeps its empty book flat, as
-# before. A broker not listed has an empty book that its own success check
-# already accepts (a bare [] for Dhan, a success envelope for Zerodha, Upstox,
-# Angel, Fyers and the XTS family), so for it an error envelope is always a
-# failed read, whatever its message says. Dhan's DH-907 ("unable to fetch data
-# due to incorrect parameters or no data present") is one of those: its empty
-# position book is [], and a flat account's Positions page could not render
-# the error envelope if it were not.
-#
-# The Noren family (Flattrade, Shoonya, Zebu, TradeSmart) answers an empty book
-# with {"stat": "Not_Ok", "emsg": "no data"}. The others are listed because
-# nothing yet shows which shape their empty book takes, and refusing every
-# entry from a flat account on a guess would be the wrong trade. Remove one
-# only once its empty book has been seen on a real account.
-EMPTY_BOOK_MESSAGE_FIELDS: dict[str, tuple[str, ...]] = {
-    "flattrade": ("emsg",),
-    "shoonya": ("emsg",),
-    "zebu": ("emsg",),
-    "tradesmart": ("emsg",),
-    "arrow": ("message",),
-    "definedge": ("message", "emsg"),
-    "firstock": ("error.message", "message"),
-    "fivepaisa": ("head.statusDescription", "body.Message"),
-    "hdfcsecurities": ("message", "error"),
-    "hdfcsky": ("message", "error"),
-    "iiflcapital": ("message",),
-    "kotak": ("emsg", "errMsg", "message"),
-    "motilal": ("message",),
-    "mstock": ("message",),
-    "nubra": ("message", "error"),
-    "paytm": ("message",),
-    "samco": ("statusMessage",),
-}
+# Brokers whose empty position book can come back as their error envelope with
+# a message, rather than as a success with an empty list, and the fields that
+# carry that message. A broker listed here keeps its empty book flat. A broker
+# not listed (Zerodha answers an empty book with a success envelope) has any
+# error envelope read as a failed read, whatever its message says. Empty today:
+# add an entry only once its empty book has been seen on a real account.
+EMPTY_BOOK_MESSAGE_FIELDS: dict[str, tuple[str, ...]] = {}
 
 _PREVIEW_CHARS = 300
 

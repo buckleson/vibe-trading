@@ -138,38 +138,3 @@ class TestProtectedPrice:
         assert info["instrument_type"] == "EQ"
         assert info["slab_type"] == "EQ/FUT"
         assert info["percentage"] == 0.5
-
-
-class TestBrokerCallSite:
-    """Flattrade's real transform_data, unchanged, now prices RELIANCE as equity."""
-
-    def test_flattrade_market_buy_reliance(self, monkeypatch):
-        import broker.flattrade.mapping.transform_data as td
-
-        class FakeBrokerData:
-            def __init__(self, auth_token):
-                pass
-
-            def get_quotes(self, symbol, exchange):
-                return {"ltp": 1339.7, "bid": 1339.7, "ask": 0.0, "tick_size": 0.1}
-
-        monkeypatch.setattr(td, "BrokerData", FakeBrokerData)
-        monkeypatch.setattr(td, "get_br_symbol", lambda symbol, exchange: f"{symbol}-EQ")
-
-        out = td.transform_data(
-            {
-                "symbol": "RELIANCE",
-                "exchange": "NSE",
-                "action": "BUY",
-                "quantity": "1",
-                "pricetype": "MARKET",
-                "product": "CNC",
-                "price": "0",
-                "trigger_price": "0",
-                "apikey": "x",
-            },
-            token="2885",
-            auth_token="dummy",
-        )
-        assert out["prctyp"] == "LMT"
-        assert float(out["prc"]) == 1346.4

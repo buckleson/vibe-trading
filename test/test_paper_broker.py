@@ -52,6 +52,16 @@ def test_expiries_are_tuesdays_and_monthlies_are_the_last_tuesday():
     assert inst.monthly_expiries(1, after_close) == [date(2026, 12, 29)]
 
 
+def test_sector_rotation_symbols_are_in_the_paper_master_contract():
+    import services.sector_rotation_service as srs
+
+    rows = inst.build_instruments(spot_of=lambda u: 1000.0, now=datetime(2026, 11, 13, 10, 0, tzinfo=inst.IST))
+    have = {(r["symbol"], r["exchange"]) for r in rows}
+    wanted = [(i.symbol, i.exchange) for i in (*srs.SECTORS, *srs.OPTIONAL_SECTORS, *srs.BENCHMARKS)]
+    missing = [w for w in wanted if w not in have]
+    assert not missing, f"not in the paper master contract: {missing}"
+
+
 def test_master_contract_rows_match_the_symtoken_schema():
     now = datetime(2026, 11, 13, 10, 0, tzinfo=inst.IST)
     rows = inst.build_instruments(spot_of=lambda u: {"NIFTY": 26012.0, "BANKNIFTY": 58460.0}.get(u, 1000.0), now=now)
@@ -172,9 +182,9 @@ def test_depth_has_five_ordered_levels_each_side():
 def test_intraday_history_is_ordered_ohlc():
     df = _handler().get_history("RELIANCE", "NSE", "5m", "2026-11-10", "2026-11-12")
     assert list(df.columns) == ["timestamp", "open", "high", "low", "close", "volume", "oi"]
-    assert len(df) == 3 * 288  # three whole days of 5 minute candles, around the clock
+    assert len(df) == 3 * 75  # three past weekdays of 5 minute candles, 09:15-15:30 IST
     assert df["timestamp"].is_monotonic_increasing
-    assert (df["timestamp"].diff().dropna() == 300).all()
+    assert set(df["timestamp"].diff().dropna()) <= {300, 64200}  # overnight gaps between sessions
     assert (df["high"] >= df[["open", "close"]].max(axis=1)).all()
     assert (df["low"] <= df[["open", "close"]].min(axis=1)).all()
 
@@ -199,7 +209,7 @@ def test_option_history_is_priced_off_the_underlying():
     expiry = inst.monthly_expiries(1)[0]
     symbol = inst.option_symbol("NIFTY", expiry, 26000, "CE")
     df = _handler().get_history(symbol, "NFO", "15m", "2026-11-12", "2026-11-12")
-    assert len(df) == 96
+    assert len(df) == 25  # one past session of 15 minute candles
     assert (df["close"] >= 0.05).all() and (df["oi"] > 0).all()
 
 

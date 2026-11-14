@@ -53,10 +53,10 @@ describe('Navbar', () => {
 
     const sheet = await screen.findByRole('dialog', { name: 'Navigation Menu' })
     const trading = within(sheet).getByRole('link', { name: 'Trading' })
-    const platforms = within(sheet).getByRole('link', { name: 'Platforms' })
+    const strategies = within(sheet).getByRole('link', { name: 'Strategies' })
 
     expect(trading).toHaveAttribute('aria-current', 'page')
-    expect(platforms).not.toHaveAttribute('aria-current')
+    expect(strategies).not.toHaveAttribute('aria-current')
     expect(currentLinks(sheet)).toEqual([trading])
   })
 
@@ -112,21 +112,14 @@ describe('Navbar More menu', () => {
     screenWidth(1024)
     renderNavbar('/dashboard')
 
-    expect(await moreMenuLabels()).toEqual(['Platforms', 'Strategies', 'Logs', 'Tools'])
+    expect(await moreMenuLabels()).toEqual(['Strategies', 'Logs', 'Tools'])
   })
 
   it('takes Tradebook and Trading as well below lg', async () => {
     screenWidth(800)
     renderNavbar('/dashboard')
 
-    expect(await moreMenuLabels()).toEqual([
-      'Tradebook',
-      'Trading',
-      'Platforms',
-      'Strategies',
-      'Logs',
-      'Tools',
-    ])
+    expect(await moreMenuLabels()).toEqual(['Tradebook', 'Trading', 'Strategies', 'Logs', 'Tools'])
   })
 
   it('is underlined only when the current page is inside it', () => {

@@ -24,22 +24,13 @@ export function sanitizeCSV(value: string | number | null | undefined): string {
 }
 
 /**
- * Returns a currency formatter bound to the active broker.
- * - deltaexchange → USD ($)
- * - all other brokers  → INR (₹)
+ * Returns a currency formatter. Always INR (₹); the argument is kept for call sites.
  */
-export function makeFormatCurrency(broker?: string | null): (value: number) => string {
-  const isUSD = broker === 'deltaexchange'
+export function makeFormatCurrency(_broker?: string | null): (value: number) => string {
   return (value: number) =>
-    isUSD
-      ? new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-        }).format(value)
-      : new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-          minimumFractionDigits: 2,
-        }).format(value)
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(value)
 }

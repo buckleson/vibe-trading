@@ -42,55 +42,18 @@ from database.broker_keys_db import (
 #: Brokers that post their answer to the callback from the broker's own site.
 #: Every other POST to a callback comes from OpenAlgo's own login form. IIFL
 #: Capital's callback reads its answer from a GET or a POST.
-BROKER_SITE_POST_BROKERS = frozenset({"compositedge", "rmoney", "iiflcapital"})
+BROKER_SITE_POST_BROKERS = frozenset()
 
-#: Brokers whose sign-in starts at the callback route: the form brokers, whose
-#: callback shows the login form, and those whose sign-in address the callback
-#: builds itself.
-CALLBACK_START_BROKERS = frozenset(
-    {
-        "fivepaisa",
-        "fivepaisaxts",
-        "aliceblue",
-        "angel",
-        "mstock",
-        "indmoney",
-        "deltaexchange",
-        "jainamxts",
-        "dhan_sandbox",
-        "paper",
-        "definedge",
-        "firstock",
-        "samco",
-        "motilal",
-        "nubra",
-        "groww",
-        "sahi",
-        "ibulls",
-        "iifl",
-        "kotak",
-        "shoonya",
-        "tradejini",
-        "tradesmart",
-        "wisdom",
-        "zebu",
-        "iiflcapital",
-    }
-)
+#: Brokers whose sign-in starts at the callback route.
+CALLBACK_START_BROKERS = frozenset({"paper"})
 
 #: Brokers that bring back a state the server generates, so the answer can be
-#: checked against it even without the cookie. The XTS pair and IIFL Capital
-#: carry it on the return address, Zerodha in its redirect_params, and the
-#: others echo the OAuth state parameter. Their answer must carry the state of
-#: the login it belongs to: the browser's marker alone proves only that some
-#: login was started, not that this code belongs to it.
-STATE_BROKERS = frozenset(
-    {"fyers", "pocketful", "compositedge", "rmoney", "iiflcapital", "zerodha", "upstox", "paytm"}
-)
+#: checked against it even without the cookie (Zerodha through redirect_params).
+STATE_BROKERS = frozenset({"zerodha"})
 
 #: The state brokers whose login starts with a GET to the callback, before
-#: any state exists: the callback builds their sign-in address itself.
-_STATE_CALLBACK_START_BROKERS = frozenset({"rmoney", "iiflcapital"})
+#: any state exists.
+_STATE_CALLBACK_START_BROKERS = frozenset()
 
 _SESSION_KEY = "broker_login"
 _SAFE_URL_VALUE = re.compile(r"[A-Za-z0-9._~:/-]+")
@@ -144,66 +107,15 @@ def login_url(keys, state):
     broker = keys.broker
     if broker in CALLBACK_START_BROKERS:
         return f"/{broker}/callback"
-    if broker == "dhan":
-        return "/dhan/initiate-oauth"
 
-    key = _url_value(keys.api_key)
-    redirect = _url_value(keys.redirect_url)
-    if broker in ("compositedge", "rmoney"):
-        return xts_login_url(broker, keys.api_key, keys.redirect_url, state)
-    if broker == "flattrade":
-        parts = (keys.api_key or "").split(":::")
-        app_key = _url_value(parts[1] if len(parts) > 1 else keys.api_key)
-        return f"https://auth.flattrade.in/?app_key={app_key}"
-    if broker == "fyers":
-        return (
-            f"https://api-t1.fyers.in/api/v3/generate-authcode?client_id={key}"
-            f"&redirect_uri={redirect}&response_type=code&state={state}"
-        )
-    if broker == "upstox":
-        return (
-            "https://api.upstox.com/v2/login/authorization/dialog?response_type=code"
-            f"&client_id={key}&redirect_uri={redirect}&state={state}"
-        )
     if broker == "zerodha":
         # Kite returns redirect_params on the return address as they were sent.
+        key = _url_value(keys.api_key)
         params = quote(f"state={state}", safe="")
         return (
             f"https://kite.zerodha.com/connect/login?v=3&api_key={key}&redirect_params={params}"
         )
-    if broker == "arrow":
-        return f"https://app.arrow.trade/app/login?appID={key}"
-    if broker == "rupeezy":
-        return f"https://flow.rupeezy.in?applicationId={key}"
-    if broker == "hdfcsecurities":
-        return f"https://developer.hdfcsec.com/oapi/v1/login?api_key={key}"
-    if broker == "hdfcsky":
-        return f"https://developer.hdfcsky.com/oapi/v1/login?api_key={key}"
-    if broker == "paytm":
-        return f"https://login.paytmmoney.com/merchant-login?apiKey={key}&state={state}"
-    if broker == "pocketful":
-        scope = quote("orders holdings", safe="")
-        return (
-            f"https://trade.pocketful.in/oauth2/auth?client_id={key}&redirect_uri={redirect}"
-            f"&response_type=code&scope={scope}&state={state}"
-        )
     return f"/{broker}/callback"
-
-
-def xts_login_url(broker, api_key, redirect_url, state):
-    """The XTS third-party sign-in address, with the state on the return address.
-
-    The broker posts the session back to the return address it was given, so
-    the state rides there (encoded once, as OpenAlgo Desktop sends it).
-    """
-    if broker == "rmoney":
-        from broker.rmoney.baseurl import INTERACTIVE_URL
-
-        base = INTERACTIVE_URL
-    else:
-        base = "https://xts.compositedge.com/interactive"
-    return_url = quote(f"{redirect_url}?state={state}", safe="")
-    return f"{base}/thirdparty?appKey={quote(api_key or '', safe='')}&returnURL={return_url}"
 
 
 def state_for(broker):

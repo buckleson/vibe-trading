@@ -146,7 +146,7 @@ echo [INFO] Updating configuration with secure keys...
 powershell -Command "(Get-Content '%OPENALGO_DIR%\%ENV_FILE%') -replace 'OPENALGO_PLACEHOLDER_APP_KEY_REGENERATE_BEFORE_USE', '%APP_KEY%' | Set-Content '%OPENALGO_DIR%\%ENV_FILE%'"
 powershell -Command "(Get-Content '%OPENALGO_DIR%\%ENV_FILE%') -replace 'OPENALGO_PLACEHOLDER_API_KEY_PEPPER_REGENERATE_BEFORE_USE', '%API_KEY_PEPPER%' | Set-Content '%OPENALGO_DIR%\%ENV_FILE%'"
 REM No broker in .env: the trader adds broker keys in OpenAlgo after signing in
-REM (Broker Configuration). VALID_BROKERS keeps the full list of brokers keys can be saved for.
+REM (Broker Configuration). VALID_BROKERS lists Sandbox (No Broker) and Zerodha.
 powershell -Command "(Get-Content '%OPENALGO_DIR%\%ENV_FILE%') -replace 'BROKER_API_KEY = ''YOUR_BROKER_API_KEY''', 'BROKER_API_KEY = ''''' | Set-Content '%OPENALGO_DIR%\%ENV_FILE%'"
 powershell -Command "(Get-Content '%OPENALGO_DIR%\%ENV_FILE%') -replace 'BROKER_API_SECRET = ''YOUR_BROKER_API_SECRET''', 'BROKER_API_SECRET = ''''' | Set-Content '%OPENALGO_DIR%\%ENV_FILE%'"
 powershell -Command "(Get-Content '%OPENALGO_DIR%\%ENV_FILE%') -replace 'BROKER_API_KEY_MARKET = ''YOUR_BROKER_MARKET_API_KEY''', 'BROKER_API_KEY_MARKET = ''''' | Set-Content '%OPENALGO_DIR%\%ENV_FILE%'"
@@ -448,9 +448,6 @@ echo   - Config:     %OPENALGO_DIR%\.env
 echo   - Database:   %OPENALGO_DIR%\db\
 echo   - Strategies: %OPENALGO_DIR%\strategies\
 echo   - Logs:       %OPENALGO_DIR%\log\
-echo.
-echo XTS Brokers (require market data credentials):
-echo   fivepaisaxts, compositedge, ibulls, iifl, jainamxts, rmoney, wisdom
 echo.
 goto end
 

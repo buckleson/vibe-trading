@@ -695,53 +695,22 @@ class WebSocketProxy:
 
         if user_id and adapter is not None and not has_other_live_client:
             broker_name = self.user_broker_mapping.get(user_id)
-            keep_special_adapter = False
-            if broker_name in ["flattrade", "shoonya"] and hasattr(
-                adapter, "unsubscribe_all"
-            ):
-                logger.info(
-                    "%s adapter for user %s: last client disconnected. "
-                    "Unsubscribing all symbols instead of disconnecting.",
-                    broker_name.title(),
-                    user_id,
-                )
-                try:
-                    response = adapter.unsubscribe_all()
-                    keep_special_adapter = bool(
-                        isinstance(response, dict)
-                        and response.get("status") == "success"
-                    )
-                    if not keep_special_adapter:
-                        logger.error(
-                            "%s unsubscribe_all was not acknowledged for user %s: %r",
-                            broker_name.title(),
-                            user_id,
-                            response,
-                        )
-                except Exception:
-                    logger.exception(
-                        "%s unsubscribe_all raised for user %s",
-                        broker_name.title(),
-                        user_id,
-                    )
-
-            if not keep_special_adapter:
-                logger.info(
-                    "Last client for user %s disconnected. Disconnecting %s adapter.",
-                    user_id,
+            logger.info(
+                "Last client for user %s disconnected. Disconnecting %s adapter.",
+                user_id,
+                broker_name or "unknown broker",
+            )
+            try:
+                adapter.disconnect()
+            except Exception:
+                logger.exception(
+                    "Error disconnecting %s adapter for user %s",
                     broker_name or "unknown broker",
+                    user_id,
                 )
-                try:
-                    adapter.disconnect()
-                except Exception:
-                    logger.exception(
-                        "Error disconnecting %s adapter for user %s",
-                        broker_name or "unknown broker",
-                        user_id,
-                    )
-                finally:
-                    self.broker_adapters.pop(user_id, None)
-                    self.user_broker_mapping.pop(user_id, None)
+            finally:
+                self.broker_adapters.pop(user_id, None)
+                self.user_broker_mapping.pop(user_id, None)
 
         elif release_failed:
             # Another live client still owns this user's shared adapter.  The
@@ -822,8 +791,8 @@ class WebSocketProxy:
                 logger.info(f"Found broker '{broker_name}' for user {user_id} from database")
             else:
                 # Fallback to environment variable
-                valid_brokers = os.getenv("VALID_BROKERS", "angel").split(",")
-                broker_name = valid_brokers[0].strip() if valid_brokers else "angel"
+                valid_brokers = os.getenv("VALID_BROKERS", "paper").split(",")
+                broker_name = valid_brokers[0].strip() if valid_brokers else "paper"
                 logger.warning(
                     f"No broker found in database for user {user_id}, using fallback: {broker_name}"
                 )

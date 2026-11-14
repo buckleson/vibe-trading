@@ -244,18 +244,6 @@ def test_option_chain_other_quote_failures_are_unchanged(chain_stubs, monkeypatc
     assert all(row["ce"]["ltp"] == 0 for row in body["chain"])
 
 
-def test_option_chain_busy_on_the_fyers_fast_path_is_a_429(chain_stubs, monkeypatch):
-    module = _data_module(get_option_chain=_raise_busy)
-    monkeypatch.setattr(chain_stubs, "get_auth_token_broker", lambda *a, **k: ("t", None, "fyers"))
-    monkeypatch.setattr(chain_stubs, "import_broker_module", lambda b: module)
-    monkeypatch.setattr(chain_stubs, "get_br_symbol", lambda s, e: "NSE:NIFTY50-INDEX")
-    multiquotes = []
-    monkeypatch.setattr(chain_stubs, "get_multiquotes", lambda **k: multiquotes.append(k))
-
-    assert _chain() == BUSY
-    assert multiquotes == []
-
-
 def test_option_chain_underlying_ltp_refusal_keeps_its_429(chain_stubs, monkeypatch):
     monkeypatch.setattr(chain_stubs, "get_quotes", lambda **k: BUSY)
     ok, body, status = _chain()

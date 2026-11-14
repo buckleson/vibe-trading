@@ -22,10 +22,19 @@ export function toolLabel(name?: string): { server: string | null; tool: string 
 function summariseInput(input: unknown): string {
   if (!input || typeof input !== 'object') return ''
   const obj = input as Record<string, unknown>
-  const keys = ['symbol', 'exchange', 'action', 'quantity', 'price_type', 'product', 'query', 'url', 'command', 'pattern']
-  const parts = keys
-    .filter((k) => obj[k] !== undefined && obj[k] !== '')
-    .map((k) => String(obj[k]))
+  const keys = [
+    'symbol',
+    'exchange',
+    'action',
+    'quantity',
+    'price_type',
+    'product',
+    'query',
+    'url',
+    'command',
+    'pattern',
+  ]
+  const parts = keys.filter((k) => obj[k] !== undefined && obj[k] !== '').map((k) => String(obj[k]))
   if (parts.length) return parts.join(' · ').slice(0, 90)
   const first = Object.values(obj).find((v) => typeof v === 'string') as string | undefined
   return first ? first.slice(0, 90) : ''
@@ -43,7 +52,10 @@ function ToolRow({ item }: { item: ChatItem }) {
         className="flex w-full items-center gap-2 px-3 py-2 text-left"
       >
         <ChevronRight
-          className={cn('h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')}
+          className={cn(
+            'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform',
+            open && 'rotate-90'
+          )}
         />
         <Wrench className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="font-medium text-foreground">{tool}</span>
@@ -126,7 +138,8 @@ function Message({ item }: { item: ChatItem }) {
 }
 
 export function ClaudeChat({ compact = false }: { compact?: boolean }) {
-  const { items, streaming, send, stop, conversationId, openConversation, status } = useClaudeStore()
+  const { items, streaming, send, stop, conversationId, openConversation, status } =
+    useClaudeStore()
   const [draft, setDraft] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -170,13 +183,17 @@ export function ClaudeChat({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-y-auto', compact ? 'px-4 py-4' : 'px-6 py-6')}>
+      <div
+        ref={scrollRef}
+        className={cn('min-h-0 flex-1 overflow-y-auto', compact ? 'px-4 py-4' : 'px-6 py-6')}
+      >
         {items.length === 0 ? (
           <div className="flex h-full flex-col justify-end gap-4 pb-2">
             <div>
               <p className="text-sm font-medium">Ask Claude to work the desk.</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                It reads quotes, positions and the order book, and places orders through the platform.
+                It reads quotes, positions and the order book, and places orders through the
+                platform.
               </p>
             </div>
             <div className="grid gap-2">

@@ -37,9 +37,6 @@ import { tools } from '@/lib/tools'
 import { useThemeStore } from '@/stores/themeStore'
 
 const integrations = [
-  'Amibroker',
-  'TradingView',
-  'GoCharting',
   'Python',
   'MetaTrader',
   'N8N',
@@ -48,7 +45,6 @@ const integrations = [
   '.NET',
   'Node.js',
   'Rust',
-  'ChartInk',
   'Excel',
   'Google Sheets',
   'OpenClaw',
@@ -66,7 +62,7 @@ const platformDesks = [
   {
     icon: Server,
     title: 'Self-hosted algo trading',
-    desc: 'A unified broker API and execution engine on your own server, driven from TradingView, Amibroker, ChartInk, Excel, Python or MCP.',
+    desc: 'A unified broker API and execution engine on your own server, driven from Zerodha, the Sandbox, Excel, Python or MCP.',
   },
   {
     icon: CandlestickChart,
@@ -277,10 +273,10 @@ export default function Home() {
               self-hosted.
             </p>
             <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-              Connect TradingView, Amibroker or your own Python code, or build strategies visually
-              with no code. Trade options from the chain to multi-leg execution with built-in risk
-              management. Chart, scalp and analyse on one live feed, and test everything in Sandbox
-              mode first, across 30+ brokers on your own server.
+              Connect your own Python code, or build strategies visually with no code. Trade options
+              from the chain to multi-leg execution with built-in risk management. Chart, scalp and
+              analyse on one live feed, and test everything in Sandbox mode first, across 30+
+              brokers on your own server.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>

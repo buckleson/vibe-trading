@@ -8,6 +8,18 @@ fix, live in [docs/releases](releases/).
 
 ## [Unreleased]
 
+### Buckleson
+
+- Removed 37 broker plugins; only Zerodha (real trading, later) and the Sandbox
+  paper broker remain, in code, env files, install scripts, login and the UI.
+- Removed the TradingView, GoCharting, Chartink and Platforms surfaces: pages,
+  routes, blueprints and their own database and services.
+- Simulated history now follows exchange sessions, so Sandbox backtests see
+  realistic candles.
+- Claude connection detects the plan or auth method (Pro, Max, Team, Console key,
+  Bedrock, Vertex) and offers a one-click Connect Claude sign-in and install help.
+- Zerodha MCP integration is deferred.
+
 ### Added
 
 - **Alerts page (`/alerts`)**: Telegram, WhatsApp, Slack and Discord on one

@@ -26,8 +26,6 @@ const NotFound = lazy(() => import('@/pages/NotFound'))
 // Broker auth
 const BrokerSelect = lazy(() => import('@/pages/BrokerSelect'))
 const BrokerConfig = lazy(() => import('@/pages/BrokerConfig'))
-const BrokerTOTP = lazy(() => import('@/pages/BrokerTOTP'))
-const SamcoAuth = lazy(() => import('@/pages/SamcoAuth'))
 
 // Main pages
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
@@ -46,9 +44,6 @@ const MasterContract = lazy(() => import('@/pages/MasterContract'))
 const ActionCenter = lazy(() => import('@/pages/ActionCenter'))
 
 // Platform pages
-const Platforms = lazy(() => import('@/pages/Platforms'))
-const TradingView = lazy(() => import('@/pages/TradingView'))
-const GoCharting = lazy(() => import('@/pages/GoCharting'))
 const PnLTracker = lazy(() => import('@/pages/PnLTracker'))
 
 // Sandbox & Analyzer
@@ -96,12 +91,6 @@ const StrategyList = lazy(() => import('@/pages/strategy/List'))
 const StrategyWizard = lazy(() => import('@/pages/strategy/Wizard'))
 const StrategyDetail = lazy(() => import('@/pages/strategy/Detail'))
 const StrategyEdit = lazy(() => import('@/pages/strategy/Edit'))
-
-// Chartink pages
-const ChartinkIndex = lazy(() => import('@/pages/chartink/ChartinkIndex'))
-const NewChartinkStrategy = lazy(() => import('@/pages/chartink/NewChartinkStrategy'))
-const ViewChartinkStrategy = lazy(() => import('@/pages/chartink/ViewChartinkStrategy'))
-const ConfigureChartinkSymbols = lazy(() => import('@/pages/chartink/ConfigureChartinkSymbols'))
 
 // Flow pages
 const FlowIndex = lazy(() => import('@/pages/flow/FlowIndex'))
@@ -187,10 +176,7 @@ function App() {
               {/* Broker auth routes */}
               <Route path="/broker" element={<BrokerSelect />} />
               <Route path="/broker/config" element={<BrokerConfig />} />
-              <Route path="/broker/:broker/totp" element={<BrokerTOTP />} />
-              <Route path="/broker/samco/auth" element={<SamcoAuth />} />
               {/* Dynamic broker TOTP routes for all supported brokers */}
-              <Route path="/:broker/auth" element={<BrokerTOTP />} />
 
               {/* Protected routes - requires broker auth */}
               <Route element={<Layout />}>
@@ -206,8 +192,6 @@ function App() {
                 {/* API Key management */}
                 <Route path="/apikey" element={<ApiKey />} />
                 {/* Phase 4: Charts & Webhook Configuration */}
-                <Route path="/platforms" element={<Platforms />} />
-                <Route path="/tradingview" element={<TradingView />} />
                 <Route path="/portfolio-backtester" element={<PortfolioBacktester />} />
                 <Route
                   path="/portfolio-backtester/results"
@@ -223,7 +207,6 @@ function App() {
                 <Route path="/sip-backtester/results" element={<SipBacktesterResults />} />
                 <Route path="/portfolio-analyzer" element={<PortfolioAnalyzer />} />
                 <Route path="/sector-rotation" element={<SectorRotation />} />
-                <Route path="/gocharting" element={<GoCharting />} />
                 <Route path="/pnl-tracker" element={<PnLTracker />} />
                 {/* Phase 4: Sandbox & Analyzer */}
                 <Route path="/sandbox" element={<Sandbox />} />
@@ -276,14 +259,6 @@ function App() {
                 <Route path="/strategy/:strategyId" element={<StrategyDetail />} />
                 <Route path="/strategy/:strategyId/edit" element={<StrategyEdit />} />
 
-                {/* Phase 6: Chartink Strategies */}
-                <Route path="/chartink" element={<ChartinkIndex />} />
-                <Route path="/chartink/new" element={<NewChartinkStrategy />} />
-                <Route path="/chartink/:strategyId" element={<ViewChartinkStrategy />} />
-                <Route
-                  path="/chartink/:strategyId/configure"
-                  element={<ConfigureChartinkSymbols />}
-                />
                 {/* Flow Editor */}
                 <Route path="/flow" element={<FlowIndex />} />
                 <Route path="/flow/shortcuts" element={<FlowKeyboardShortcuts />} />

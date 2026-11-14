@@ -260,11 +260,9 @@ def test_only_pilot_brokers_ship_gtt_modules():
     brokers = {
         path.parent.parent.name for path in (repository_root / "broker").glob("*/api/gtt_api.py")
     }
-    # Angel, Fyers and Upstox joined the Dhan and Zerodha pilot in 6d7f2552.
     # The set is exhaustive on purpose: a broker gaining a gtt_api module by
     # accident should fail here rather than silently start routing GTTs.
-    # Rupeezy joined with its Vortex GTT API (single + OCO).
-    assert brokers == {"angel", "dhan", "fyers", "rupeezy", "upstox", "zerodha"}
+    assert brokers == {"zerodha"}
 
 
 def test_queue_order_remains_successful_when_notification_fails(monkeypatch):

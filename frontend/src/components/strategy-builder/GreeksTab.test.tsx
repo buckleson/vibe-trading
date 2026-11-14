@@ -95,7 +95,7 @@ describe('GreeksTab positional units', () => {
       <GreeksTab
         legs={[optionLeg()]}
         greeksByLeg={OPTION_GREEKS}
-        formatCurrency={makeFormatCurrency('deltaexchange')}
+        formatCurrency={makeFormatCurrency('zerodha')}
       />
     )
 
@@ -107,12 +107,11 @@ describe('GreeksTab positional units', () => {
     expect(
       screen.getByRole('columnheader', { name: /Vega.*position currency.*1% IV/i })
     ).toBeVisible()
-    expect(screen.getByRole('table')).not.toHaveTextContent('₹')
 
     fireEvent.click(screen.getByText('Currency values'))
-    expect(screen.getByTestId('net-theta')).toHaveTextContent('-$600.00')
-    expect(screen.getByTestId('net-vega')).toHaveTextContent('$1,000.00')
-    expect(screen.getByTestId('net-delta')).not.toHaveTextContent('$')
-    expect(screen.getByTestId('net-gamma')).not.toHaveTextContent('$')
+    expect(screen.getByTestId('net-theta')).toHaveTextContent('-₹600.00')
+    expect(screen.getByTestId('net-vega')).toHaveTextContent('₹1,000.00')
+    expect(screen.getByTestId('net-delta')).not.toHaveTextContent('₹')
+    expect(screen.getByTestId('net-gamma')).not.toHaveTextContent('₹')
   })
 })

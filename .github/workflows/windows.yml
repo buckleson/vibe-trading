@@ -32,7 +32,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Backend tests
-        run: uv run pytest test/test_paper_broker.py test/test_buckleson_bridge.py -o addopts="" -q
+        run: uv run pytest test/test_paper_broker.py test/test_buckleson_bridge.py test/test_bk_zerodha_only.py test/test_bk_broker_login.py test/test_bk_platforms_removed.py test/test_bk_claude_connect.py test/test_bk_paper_history.py test/test_bk_backtests.py test/test_bk_sandbox_smoke.py test/test_bk_ci.py -o addopts="" -q
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -47,7 +47,7 @@ jobs:
 
       - name: Frontend tests
         working-directory: frontend
-        run: npx vitest run src/stores src/components/layout src/components/auth src/pages/Trading.test.tsx src/pages/Positions.test.tsx
+        run: npx vitest run src/stores src/components/layout src/components/auth src/components/claude src/components/portfolio/SymbolSearchInput.test.tsx src/config src/pages/Trading.test.tsx src/pages/Positions.test.tsx src/pages/OrderSurfaces.test.tsx src/components/trading/PlaceOrderDialog.test.tsx
 
       - name: Build frontend
         working-directory: frontend

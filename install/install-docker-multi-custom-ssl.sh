@@ -1334,8 +1334,7 @@ for i in "${!CONF_DOMAINS[@]}"; do
         PEPPER=$(generate_hex)
 
         # No broker in .env: the trader adds broker keys in OpenAlgo after
-        # signing in (Broker Configuration). VALID_BROKERS keeps the full list of
-        # brokers keys can be saved for.
+        # signing in (Broker Configuration). VALID_BROKERS lists Sandbox (No Broker) and Zerodha.
         sed -i \
             -e "s|^BROKER_API_KEY *=.*|BROKER_API_KEY = ''|" \
             -e "s|^BROKER_API_SECRET *=.*|BROKER_API_SECRET = ''|" \

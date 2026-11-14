@@ -23,7 +23,6 @@ _STEP_NAMES = (
     "_stop_health_collector",
     "_stop_flow_scheduler",
     "_stop_historify_scheduler",
-    "_stop_chartink_scheduler",
     "_stop_python_strategy_scheduler",
     "_stop_squareoff_scheduler",
     "_stop_strategy_module",

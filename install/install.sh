@@ -947,7 +947,7 @@ else
     sudo cp $OPENALGO_PATH/.sample.env $OPENALGO_PATH/.env
 
     # No broker in .env: the trader adds broker keys in OpenAlgo after signing in
-    # (Broker Configuration). VALID_BROKERS keeps the full list of brokers keys can be saved for.
+    # (Broker Configuration). VALID_BROKERS lists Sandbox (No Broker) and Zerodha.
     sudo sed -i \
         -e "s|^BROKER_API_KEY *=.*|BROKER_API_KEY = ''|" \
         -e "s|^BROKER_API_SECRET *=.*|BROKER_API_SECRET = ''|" \

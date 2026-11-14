@@ -48,7 +48,6 @@ SCOPED_SESSION_MODULES = [
     ("database.sandbox_db", "db_session"),
     ("database.analyzer_db", "db_session"),
     ("database.chart_prefs_db", "db_session"),
-    ("database.chartink_db", "db_session"),
     ("database.flow_db", "db_session"),
     ("database.scalping_db", "db_session"),
     ("database.watchlist_db", "db_session"),

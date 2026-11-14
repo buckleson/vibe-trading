@@ -49,7 +49,6 @@ from flask_wtf.csrf import CSRFProtect  # Import CSRF protection
 
 from blueprints.admin import admin_bp  # Import the admin blueprint
 from blueprints.agent import agent_bp  # Import the agent blueprint
-from blueprints.claude_bridge import claude_bp  # Claude Code bridge (in-app chat, status)
 from blueprints.alert_channels import alert_channels_bp  # Alert channels (/alerts page)
 from blueprints.alerts import alerts_bp  # Import the chart alert log blueprint
 from blueprints.analyzer import analyzer_bp  # Import the analyzer blueprint
@@ -62,14 +61,13 @@ from blueprints.broker_credentials import (
     broker_credentials_bp,  # Import the broker credentials blueprint
 )
 from blueprints.chart_test import chart_test_bp  # Standalone chart test page (dev/testing only)
-from blueprints.chartink import chartink_bp  # Import the chartink blueprint
+from blueprints.claude_bridge import claude_bp  # Claude Code bridge (in-app chat, status)
 from blueprints.core import core_bp
 from blueprints.custom_indicators import custom_indicators_bp  # User chart indicators
 from blueprints.custom_straddle import custom_straddle_bp  # Import custom straddle blueprint
 from blueprints.dashboard import dashboard_bp
 from blueprints.flow import flow_bp  # Import the flow blueprint
 from blueprints.gamma_density import gamma_density_bp  # Import the Gamma Density blueprint
-from blueprints.gc_json import gc_json_bp
 from blueprints.gex import gex_bp  # Import the GEX blueprint
 from blueprints.health import health_bp  # Import the health monitoring blueprint
 from blueprints.historify import historify_bp  # Import the historify blueprint
@@ -87,7 +85,6 @@ from blueprints.oitracker import oitracker_bp  # Import the OI tracker blueprint
 from blueprints.openscript import openscript_bp  # Trader authored OpenScript sources
 from blueprints.openscript_runner import openscript_runner_bp  # Runs one saved strategy
 from blueprints.orders import orders_bp
-from blueprints.platforms import platforms_bp
 from blueprints.playground import playground_bp  # Import the API playground blueprint
 from blueprints.pnltracker import pnltracker_bp  # Import the pnl tracker blueprint
 from blueprints.postback import postback_bp  # Import broker postback (order updates) blueprint
@@ -113,7 +110,6 @@ from blueprints.system_permissions import (
 )
 from blueprints.telegram import telegram_bp  # Import the telegram blueprint
 from blueprints.traffic import traffic_bp  # Import the traffic blueprint
-from blueprints.tv_json import tv_json_bp
 from blueprints.vol_surface import vol_surface_bp  # Import the vol surface blueprint
 from blueprints.watchlist import watchlist_bp  # Import the charting watchlist blueprint
 from blueprints.websocket_example import websocket_bp  # Import the websocket example blueprint
@@ -129,7 +125,6 @@ from database.apilog_db import init_db as ensure_api_log_tables_exists
 from database.apscheduler_jobstore_db import ensure_jobstore_tables_exist
 from database.auth_db import init_db as ensure_auth_tables_exists
 from database.broker_keys_db import ensure_broker_keys_tables_exists
-from database.chartink_db import init_db as ensure_chartink_tables_exists
 from database.flow_db import init_db as ensure_flow_tables_exists
 from database.historify_db import init_database as ensure_historify_tables_exists
 from database.latency_db import init_latency_db as ensure_latency_tables_exists
@@ -308,14 +303,10 @@ def create_app():
     app.register_blueprint(search_bp)
     app.register_blueprint(api_key_bp)
     app.register_blueprint(log_bp)
-    app.register_blueprint(tv_json_bp)
-    app.register_blueprint(gc_json_bp)
-    app.register_blueprint(platforms_bp)
     app.register_blueprint(brlogin_bp)
     app.register_blueprint(core_bp)
     app.register_blueprint(analyzer_bp)
     app.register_blueprint(settings_bp)
-    app.register_blueprint(chartink_bp)
     app.register_blueprint(traffic_bp)
     app.register_blueprint(latency_bp)
     app.register_blueprint(leverage_bp)  # Register Leverage blueprint
@@ -448,7 +439,6 @@ def create_app():
     # Exempt webhook endpoints from CSRF protection after app initialization
     with app.app_context():
         # Exempt webhook endpoints from CSRF protection
-        csrf.exempt(app.view_functions["chartink_bp.webhook"])
         # The strategy module's inbound alert path. Unauthenticated by
         # design: the URL token is the credential, and TradingView cannot
         # carry a CSRF token.
@@ -790,7 +780,6 @@ def setup_environment(app):
                 ("API Log DB", ensure_api_log_tables_exists),
                 ("Analyzer DB", ensure_analyzer_tables_exists),
                 ("Settings DB", ensure_settings_tables_exists),
-                ("Chartink DB", ensure_chartink_tables_exists),
                 ("Traffic Logs DB", ensure_traffic_logs_exists),
                 ("Latency DB", ensure_latency_tables_exists),
                 ("Sandbox DB", ensure_sandbox_tables_exists),

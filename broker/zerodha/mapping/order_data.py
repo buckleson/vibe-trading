@@ -266,8 +266,7 @@ def transform_tradebook_data(tradebook_data):
             # against. Emitted under OpenAlgo's own established key
             # "tradeid" (no underscore) - the documented tradebook contract
             # (docs/prompt/flow-import-format.md) and existing consumers
-            # (services/telegram_bot_service*.py, broker/groww's own
-            # adapter) already expect that exact key.
+            # (services/telegram_bot_service*.py) already expect that exact key.
             "tradeid": trade.get("trade_id", ""),
             "timestamp": trade.get("fill_timestamp") or trade.get("order_timestamp", ""),
         }

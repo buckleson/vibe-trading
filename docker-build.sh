@@ -145,12 +145,8 @@ check_env_file() {
     # Display broker configuration (without secrets)
     if ! env_sets_broker; then
         print_info "No broker in .env. Sign in to OpenAlgo and add your broker keys in Broker Configuration."
-    elif grep -q "REDIRECT_URL.*fyers" .env; then
-        print_info "Detected broker: Fyers"
     elif grep -q "REDIRECT_URL.*zerodha" .env; then
         print_info "Detected broker: Zerodha"
-    elif grep -q "REDIRECT_URL.*angel" .env; then
-        print_info "Detected broker: Angel One"
     else
         print_info "Broker configuration detected in .env"
     fi
@@ -372,9 +368,6 @@ show_access_info() {
     if ! env_sets_broker; then
         echo -e "  ${YELLOW}None in .env. Sign in to OpenAlgo and add your broker keys in Broker Configuration,${NC}"
         echo -e "  ${YELLOW}then register the redirect URL shown there in your broker's developer console.${NC}"
-    elif grep -q "fyers" .env 2>/dev/null; then
-        echo -e "  ${GREEN}Fyers${NC}"
-        echo -e "  Callback URL: ${YELLOW}http://127.0.0.1:5000/fyers/callback${NC}"
     elif grep -q "zerodha" .env 2>/dev/null; then
         echo -e "  ${GREEN}Zerodha${NC}"
         echo -e "  Callback URL: ${YELLOW}http://127.0.0.1:5000/zerodha/callback${NC}"

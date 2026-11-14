@@ -4,10 +4,9 @@ Serves the pre-built React app for migrated routes.
 """
 
 import mimetypes
-import os
 from pathlib import Path
 
-from flask import Blueprint, abort, request, send_file, send_from_directory
+from flask import Blueprint, request, send_file, send_from_directory
 
 react_bp = Blueprint("react", __name__)
 
@@ -51,15 +50,6 @@ def _accepts_encoding(header: str, encoding: str) -> bool:
 
 # Path to the pre-built React frontend
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
-
-
-def _configured_brokers():
-    """Broker names this deployment loads, per VALID_BROKERS in .env."""
-    return {
-        broker.strip().lower()
-        for broker in (os.getenv("VALID_BROKERS") or "").split(",")
-        if broker.strip()
-    }
 
 
 def is_react_frontend_available():
@@ -165,30 +155,6 @@ def react_broker_config():
     return serve_react_app()
 
 
-# Broker TOTP routes - serve React for broker authentication forms
-@react_bp.route("/broker/<broker>/totp")
-def react_broker_totp(broker):
-    return serve_react_app()
-
-
-# Samco keeps its own auth form path rather than the generic TOTP one.
-@react_bp.route("/broker/samco/auth", strict_slashes=False)
-def react_broker_samco_auth():
-    return serve_react_app()
-
-
-# Generic per-broker auth form, matching the React "/:broker/auth" route.
-@react_bp.route("/<broker>/auth", strict_slashes=False)
-def react_broker_auth(broker):
-    # A root-level dynamic rule matches anything, so serving the SPA
-    # unconditionally would let "/<probe>/auth" bypass the unauthenticated 404
-    # tracking that feeds the IP ban. Only brokers this deployment actually
-    # loads are served; everything else falls through to the not-found path.
-    if broker.strip().lower() not in _configured_brokers():
-        abort(404)
-    return serve_react_app()
-
-
 # Dashboard
 @react_bp.route("/dashboard")
 def react_dashboard():
@@ -253,18 +219,6 @@ def react_trading():
 # ============================================================
 
 
-# Trading Platforms overview
-@react_bp.route("/platforms")
-def react_platforms():
-    return serve_react_app()
-
-
-# TradingView webhook configuration
-@react_bp.route("/tradingview")
-def react_tradingview():
-    return serve_react_app()
-
-
 # Portfolio Backtester
 @react_bp.route("/portfolio-backtester")
 def react_portfolio_backtester():
@@ -293,12 +247,6 @@ def react_portfolio_legacy():
 # Portfolio Analyzer (live broker holdings)
 @react_bp.route("/portfolio-analyzer")
 def react_portfolio_analyzer():
-    return serve_react_app()
-
-
-# GoCharting webhook configuration
-@react_bp.route("/gocharting")
-def react_gocharting():
     return serve_react_app()
 
 
@@ -566,28 +514,6 @@ def react_python_schedule(strategy_id):
 
 @react_bp.route("/python/guide", strict_slashes=False)
 def react_python_guide():
-    return serve_react_app()
-
-
-# Chartink Strategies
-# Note: Using strict_slashes=False to handle both /chartink and /chartink/
-@react_bp.route("/chartink", strict_slashes=False)
-def react_chartink_index():
-    return serve_react_app()
-
-
-@react_bp.route("/chartink/new", strict_slashes=False)
-def react_chartink_new():
-    return serve_react_app()
-
-
-@react_bp.route("/chartink/<int:strategy_id>", strict_slashes=False)
-def react_chartink_view(strategy_id):
-    return serve_react_app()
-
-
-@react_bp.route("/chartink/<int:strategy_id>/configure", strict_slashes=False)
-def react_chartink_configure(strategy_id):
     return serve_react_app()
 
 

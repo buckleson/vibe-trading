@@ -417,6 +417,23 @@ def _session(day) -> tuple[float, float] | None:
     return opening, opening + SESSION_SECONDS
 
 
+def _history_session(day, today) -> tuple[float, float] | None:
+    """Session of a history day: past days follow the exchange, today follows the live setting."""
+    if day >= today:
+        return _session(day)
+    if day.weekday() >= 5:
+        return None
+    opening = inst.IST.localize(datetime(day.year, day.month, day.day, *SESSION_OPEN)).timestamp()
+    return opening, opening + SESSION_SECONDS
+
+
+def _volume_day_length(stamps, now: float) -> np.ndarray:
+    """Per-bar trading-day length in seconds: past days are exchange sessions, today follows the setting."""
+    today_start = inst.IST.localize(datetime.fromtimestamp(now, inst.IST).replace(tzinfo=None, hour=0, minute=0, second=0, microsecond=0)).timestamp()
+    today_length = 86400.0 if _hours_setting() == "always" else float(SESSION_SECONDS)
+    return np.where(np.asarray(stamps, dtype=np.float64) >= today_start, today_length, float(SESSION_SECONDS))
+
+
 def _previous_session(day):
     for back in range(1, 8):
         earlier = day - timedelta(days=back)
@@ -678,8 +695,9 @@ def _session_starts(start: datetime, end: datetime, seconds: int, now: float) ->
     starts = []
     day = start.date()
     last = end.date()
+    today = datetime.fromtimestamp(now, inst.IST).date()
     while day <= last:
-        bounds = _session(day)
+        bounds = _history_session(day, today)
         if bounds:
             stamps = np.arange(bounds[0], bounds[1], seconds, dtype=np.float64)
             starts.append(stamps[stamps <= now])
@@ -690,8 +708,9 @@ def _session_starts(start: datetime, end: datetime, seconds: int, now: float) ->
 def _sim_spot_history(symbol, exchange, reference, seconds, start, end, now) -> pd.DataFrame:
     if seconds >= 86400:
         rows = []
+        today = datetime.fromtimestamp(now, inst.IST).date()
         for d in pd.date_range(start.date(), end.date(), freq="D"):
-            bounds = _session(d.date())
+            bounds = _history_session(d.date(), today)
             if not bounds or bounds[0] > now:
                 continue
             opening, closing = bounds
@@ -722,8 +741,7 @@ def _sim_spot_history(symbol, exchange, reference, seconds, start, end, now) -> 
         volume = np.zeros(starts.size)
     else:
         noise = (_uniform(_seed(symbol), 77, starts) + 1.0) / 2.0
-        day_length = 86400.0 if _hours_setting() == "always" else SESSION_SECONDS
-        volume = base * seconds / day_length * (0.4 + 1.2 * noise)
+        volume = base * seconds / _volume_day_length(starts, now) * (0.4 + 1.2 * noise)
     return pd.DataFrame(
         {
             "timestamp": starts.astype(np.int64),
@@ -784,8 +802,7 @@ def history(symbol: str, exchange: str, seconds: int, start: datetime, end: date
             day_volume, oi = _derivative_activity(
                 kind, details, symbol, base["close"].to_numpy(dtype=np.float64)
             )
-            day_length = 86400.0 if _hours_setting() == "always" else SESSION_SECONDS
-            share = 1.0 if seconds >= 86400 else seconds / day_length
+            share = 1.0 if seconds >= 86400 else seconds / _volume_day_length(stamp, now)
             noise = 0.4 + 0.6 * (_uniform(_seed(symbol), 5, stamp) + 1.0)
             if kind == "future":
                 carry = np.exp(RISK_FREE_RATE * years)

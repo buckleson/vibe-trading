@@ -86,7 +86,6 @@ def test_cross_platform_runtime_suite_covers_windows_mac_and_arm64():
         "test_gthread_core_db_sessions.py",
         "test_gthread_core_shutdown.py",
         "test_gthread_core_proxy_mode.py",
-        "test_gthread_hosts_chartink.py",
         "test_gthread_historify_lifecycle.py",
         "test_gthread_sandbox_funds.py",
         "test_gthread_sandbox_orders.py",

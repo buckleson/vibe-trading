@@ -6,11 +6,26 @@
  * queries the instrument master as they type and returns a symbol that is
  * known to exist on the exchange they picked.
  */
-import { useEffect, useRef, useState } from 'react'
+
 import { useQuery } from '@tanstack/react-query'
-import { chartinkApi } from '@/api/chartink'
+import { useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+
+interface SymbolResult {
+  symbol: string
+  name: string
+  exchange: string
+}
+
+async function searchSymbols(query: string, exchange: string): Promise<SymbolResult[]> {
+  const res = await fetch(
+    `/search/api/search?q=${encodeURIComponent(query)}&exchange=${encodeURIComponent(exchange)}`,
+    { credentials: 'include', headers: { Accept: 'application/json' } }
+  )
+  const body = (await res.json()) as { results?: SymbolResult[] }
+  return (body.results ?? []).map((r) => ({ symbol: r.symbol, name: r.name, exchange: r.exchange }))
+}
 
 interface Props {
   value: string
@@ -47,7 +62,7 @@ export function SymbolSearchInput({
   // list is useless.
   const { data: results = [], isFetching } = useQuery({
     queryKey: ['portfolio', 'symsearch', exchange, query],
-    queryFn: () => chartinkApi.searchSymbols(query.trim(), exchange),
+    queryFn: () => searchSymbols(query.trim(), exchange),
     enabled: open && query.trim().length >= 2,
     staleTime: 60_000,
   })
@@ -103,9 +118,7 @@ export function SymbolSearchInput({
             >
               <span className="font-medium">{r.symbol}</span>
               <span className="truncate text-xs text-muted-foreground">{r.name}</span>
-              <span className="ml-auto text-[10px] text-muted-foreground">
-                {r.exchange}
-              </span>
+              <span className="ml-auto text-[10px] text-muted-foreground">{r.exchange}</span>
             </button>
           ))}
         </div>

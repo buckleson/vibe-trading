@@ -173,7 +173,6 @@ def _load_init_functions() -> list:
     from database.apilog_db import init_db as api_log
     from database.auth_db import init_db as auth
     from database.chart_prefs_db import ensure_chart_prefs_tables_exists as chart_prefs
-    from database.chartink_db import init_db as chartink
     from database.flow_db import init_db as flow
     from database.historify_db import init_database as historify
     from database.latency_db import init_latency_db as latency
@@ -200,7 +199,6 @@ def _load_init_functions() -> list:
         ("API Log DB", api_log),
         ("Analyzer DB", analyzer),
         ("Settings DB", settings),
-        ("Chartink DB", chartink),
         ("Traffic Logs DB", traffic_logs),
         ("Latency DB", latency),
         ("Sandbox DB", sandbox),

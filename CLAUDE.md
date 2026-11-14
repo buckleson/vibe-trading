@@ -13,7 +13,7 @@ single broker session and WebSocket feed:
 
 | Surface | Route | Purpose |
 | --- | --- | --- |
-| Unified Broker API | `/api/v1/` | External platforms (TradingView, Amibroker, ChartInk, Excel, Python, MCP) |
+| Unified Broker API | `/api/v1/` | External platforms (REST, Python, MCP) |
 | Python Strategy Host | `/python` | In-browser editor; scripts scheduled on IST times, run as isolated subprocesses with live logs |
 | Flow (No-Code Builder) | `/flow` | Node graph: market data to indicators to conditions to order execution |
 | Strategy Module & RMS | `/strategy` | Multi-leg options strategies with end-to-end risk management, plus a signal-driven mode for per-alert TradingView trading. Two kinds share one engine: `batch` enters and exits every leg together, `signal` moves one leg per alert. Risk rules come from the shared `services/risk/` core. See [`docs/prompt/strategy_rms_documentation.md`](docs/prompt/strategy_rms_documentation.md). |
@@ -38,6 +38,8 @@ Read `docs/INDEX.md` first, then open only the specific doc you need instead of
 scanning the tree. Do **not** copy or restate docs into a second location — edit
 the source file in `docs/` and every reader sees the change.
 
+Buckleson (this fork's Zerodha-only, paper-first desk) is documented in `docs/buckleson/`.
+
 ## Skills
 
 Detailed procedures live in `.claude/skills/` and load on demand:
@@ -56,7 +58,7 @@ Detailed procedures live in `.claude/skills/` and load on demand:
 - **Self-hosted on the user's own server** — server access equals full control. No SaaS component.
 - All official install scripts (`install.sh`, `install-docker.sh`, `install-multi.sh`, `docker-run.sh`, `docker-run.bat`, `start.sh`) auto-generate unique `APP_KEY` and `API_KEY_PEPPER` via `secrets.token_hex(32)`.
 - **SEBI static IP mandate** (effective April 1, 2026): transactional API orders require broker-side static IP whitelisting. Delta Exchange (crypto) enforces the same. Stolen broker credentials cannot be used from an attacker's machine — the broker rejects non-registered IPs. Attacks routed *through* the OpenAlgo server (which holds the registered IP) remain viable.
-- External platforms (TradingView, GoCharting, Chartink) send API keys in the JSON body or URL query params — they cannot set custom HTTP headers. This is an accepted architectural trade-off.
+- Webhooks (from Flow and the Strategy module only) send API keys in the JSON body or URL query params — they cannot set custom HTTP headers. This is an accepted architectural trade-off.
 - The stdio MCP server (`mcp/mcpserver.py`) is local-only and not remotely exposed. `blueprints/mcp_http.py` and `blueprints/mcp_oauth.py` are the remote-facing MCP surfaces.
 - Indian broker tokens expire daily at ~3:00 AM IST. Session management is aligned to that schedule.
 

@@ -9,7 +9,6 @@ import {
   brokerStatus,
   sortBrokers,
 } from '@/api/broker-config'
-import { BrokerAuthSignOut } from '@/components/auth/BrokerAuthSignOut'
 import { BrokerSwitchConfirm } from '@/components/auth/BrokerSwitchConfirm'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -39,7 +38,6 @@ import { useBrokerStore } from '@/stores/brokerStore'
 /** Brokers whose market data needs a paid data subscription. */
 const DATA_SUBSCRIPTION_NOTE: Record<string, string> = {
   zerodha: 'Zerodha requires an active Kite Connect data subscription for market data access.',
-  dhan: 'Dhan requires an active Data API subscription for market data access.',
 }
 
 /**
@@ -243,7 +241,6 @@ export default function BrokerSelect() {
                 Documentation
               </a>
             </Button>
-            <BrokerAuthSignOut />
           </div>
         </div>
 

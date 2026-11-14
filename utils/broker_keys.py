@@ -68,47 +68,7 @@ _STARTUP_VALUES = {var: os.environ.get(var) for var in ENV_VARS.values()}
 _CALLBACK_PATTERN = re.compile(r"/([^/]+)/callback$")
 
 #: Display names for messages a trader reads.
-BROKER_NAMES = {
-    "fivepaisa": "5 Paisa",
-    "fivepaisaxts": "5 Paisa (XTS)",
-    "aliceblue": "Alice Blue",
-    "angel": "Angel One",
-    "arrow": "Arrow",
-    "compositedge": "CompositEdge",
-    "dhan": "Dhan",
-    "deltaexchange": "Delta Exchange",
-    "indmoney": "IndMoney",
-    "dhan_sandbox": "Dhan (Sandbox)",
-    "definedge": "Definedge",
-    "firstock": "Firstock",
-    "flattrade": "Flattrade",
-    "motilal": "Motilal Oswal",
-    "fyers": "Fyers",
-    "groww": "Groww",
-    "hdfcsecurities": "HDFC Securities",
-    "hdfcsky": "HDFC Sky",
-    "ibulls": "Ibulls",
-    "iifl": "IIFL",
-    "iiflcapital": "IIFL Capital",
-    "jainamxts": "JainamXts",
-    "kotak": "Kotak Securities",
-    "mstock": "mStock by Mirae Asset",
-    "nubra": "Nubra",
-    "paper": "Sandbox (No Broker)",
-    "paytm": "Paytm Money",
-    "pocketful": "Pocketful",
-    "rmoney": "RMoney",
-    "rupeezy": "Rupeezy",
-    "sahi": "Sahi",
-    "samco": "Samco",
-    "shoonya": "Shoonya",
-    "tradejini": "Tradejini",
-    "tradesmart": "TradeSmart",
-    "upstox": "Upstox",
-    "wisdom": "Wisdom Capital",
-    "zebu": "Zebu",
-    "zerodha": "Zerodha",
-}
+BROKER_NAMES = {"paper": "Sandbox (No Broker)", "zerodha": "Zerodha"}
 
 #: Brokers that log in with no keys at all. ``resolve`` answers them with empty
 #: keys (source "none") when neither .env nor Broker Configuration has any, so
@@ -348,11 +308,7 @@ def env_broker(values=None):
 
 
 #: API key layouts some brokers need, as "field:::field". (separators, message)
-_KEY_FORMATS = {
-    "fivepaisa": (2, "5paisa API key must be in format: 'User_Key:::User_ID:::client_id'"),
-    "flattrade": (1, "Flattrade API key must be in format: 'client_id:::api_key'"),
-    "dhan": (1, "Dhan API key must be in format: 'client_id:::api_key'"),
-}
+_KEY_FORMATS = {}
 
 
 def key_format_error(broker, api_key):

@@ -483,14 +483,6 @@ describe('StrategyBuilder live request orchestration', () => {
     )
   })
 
-  it('formats currency output for the authenticated Delta Exchange broker', async () => {
-    mocks.broker = 'deltaexchange'
-    renderBuilder()
-    await addOneLeg()
-
-    expect(screen.getAllByText('$125.00').length).toBeGreaterThan(0)
-  })
-
   it('adds a manual far-expiry option only from that expiry response', async () => {
     const farChain = chainFixture('NIFTY', '18AUG26')
     if (farChain.chain[0].ce) {

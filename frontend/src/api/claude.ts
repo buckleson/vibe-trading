@@ -1,11 +1,33 @@
 import { fetchCSRFToken } from './client'
 
+export interface ClaudePlan {
+  key: string | null
+  label: string | null
+}
+
 export interface ClaudeCliStatus {
   installed: boolean
   path: string | null
   version: string | null
   logged_in: boolean
   auth_method: string | null
+  plan: ClaudePlan
+  api_provider: string | null
+  subscription: string | null
+}
+
+export type ClaudeLoginState = {
+  state: 'idle' | 'starting' | 'waiting' | 'connected' | 'failed'
+  url: string | null
+  needs_code: boolean
+  method: 'claudeai' | 'console' | null
+  message: string | null
+}
+
+export interface ClaudeInstallInfo {
+  platform: 'windows' | 'mac' | 'linux'
+  commands: { windows: string; unix: string; npm: string }
+  docs: string
 }
 
 export interface ClaudeExternalStatus {
@@ -33,6 +55,8 @@ export interface ClaudeStatus {
   desk_dir: string
   skills: ClaudeSkill[]
   access_levels: Record<string, { label: string; description: string }>
+  install: ClaudeInstallInfo
+  login: ClaudeLoginState
 }
 
 export interface ClaudeConnectInfo {
@@ -84,7 +108,11 @@ async function send<T>(url: string, method: string, body?: unknown): Promise<T> 
   const res = await fetch(url, {
     method,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, Accept: 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrf,
+      Accept: 'application/json',
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
@@ -93,7 +121,8 @@ async function send<T>(url: string, method: string, body?: unknown): Promise<T> 
 }
 
 export const claudeApi = {
-  status: (refresh = false) => getJson<ClaudeStatus>(`/claude/api/status${refresh ? '?refresh=1' : ''}`),
+  status: (refresh = false) =>
+    getJson<ClaudeStatus>(`/claude/api/status${refresh ? '?refresh=1' : ''}`),
   connect: () => getJson<ClaudeConnectInfo>('/claude/api/connect'),
   conversations: () =>
     getJson<{ conversations: ClaudeConversationSummary[] }>('/claude/api/conversations').then(
@@ -104,6 +133,15 @@ export const claudeApi = {
       (d) => d.conversation
     ),
   deleteConversation: (id: string) => send(`/claude/api/conversations/${id}`, 'DELETE'),
+  startLogin: (method: 'claudeai' | 'console' = 'claudeai') =>
+    send<{ login: ClaudeLoginState }>('/claude/api/login', 'POST', { method }).then((d) => d.login),
+  loginStatus: () => getJson<{ login: ClaudeLoginState }>('/claude/api/login').then((d) => d.login),
+  submitLoginCode: (code: string) =>
+    send<{ login: ClaudeLoginState }>('/claude/api/login/code', 'POST', { code }).then(
+      (d) => d.login
+    ),
+  cancelLogin: () =>
+    send<{ login: ClaudeLoginState }>('/claude/api/login', 'DELETE').then((d) => d.login),
   stop: (id: string) => send(`/claude/api/chat/${id}/stop`, 'POST'),
 
   /** Stream one turn. Calls onEvent for every server-sent event, resolves at the end. */
@@ -116,7 +154,11 @@ export const claudeApi = {
     const res = await fetch('/claude/api/chat', {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, Accept: 'text/event-stream' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf,
+        Accept: 'text/event-stream',
+      },
       body: JSON.stringify(payload),
       signal,
     })
