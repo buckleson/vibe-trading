@@ -18,7 +18,9 @@ fix, live in [docs/releases](releases/).
   realistic candles.
 - Claude connection detects the plan or auth method (Pro, Max, Team, Console key,
   Bedrock, Vertex) and offers a one-click Connect Claude sign-in and install help.
-- Zerodha MCP integration is deferred.
+- Zerodha: a Zerodha login is kept across restarts and browsers and falls back
+  to paper when it ends; Zerodha's Kite MCP server can be added to Claude Code
+  from the Claude page (read-only in the app; orders go through Buckleson).
 
 ### Added
 

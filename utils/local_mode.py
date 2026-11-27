@@ -65,6 +65,34 @@ def ensure_api_key() -> str | None:
     return key
 
 
+def active_broker() -> str:
+    """The broker the operator is signed in to.
+
+    A live session stored for another broker (Zerodha after "Login with
+    Zerodha") wins; otherwise it is the local broker.
+    """
+    from database.auth_db import get_auth_token_dbquery
+
+    row = get_auth_token_dbquery(LOCAL_USER)
+    if row is not None and row.broker:
+        return row.broker
+    return local_broker()
+
+
+def ensure_broker_session() -> None:
+    """Sign the operator in to the paper broker when no broker session is live.
+
+    Runs at start and whenever a browser needs a session, so an expired or
+    revoked Zerodha session falls back to paper trading instead of a login wall.
+    """
+    from database.auth_db import get_auth_token, upsert_auth
+
+    if local_broker() != PAPER_BROKER or get_auth_token(LOCAL_USER, bypass_cache=True) is not None:
+        return
+    upsert_auth(LOCAL_USER, PAPER_AUTH_TOKEN, PAPER_BROKER, feed_token=PAPER_FEED_TOKEN, user_id=LOCAL_USER)
+    logger.info("Local mode signed in to the paper broker")
+
+
 def bootstrap() -> bool:
     """Create the operator, the paper broker session, the API key; switch Sandbox on.
 
@@ -79,7 +107,6 @@ def bootstrap() -> bool:
         if _bootstrapped.is_set():
             return True
         try:
-            from database.auth_db import get_auth_token, upsert_auth
             from database.settings_db import get_analyze_mode, set_analyze_mode
             from database.user_db import add_user, find_user_by_exact_username
 
@@ -87,16 +114,8 @@ def bootstrap() -> bool:
                 add_user(LOCAL_USER, LOCAL_EMAIL, secrets.token_urlsafe(32), is_admin=True)
                 logger.info(f"Local mode created the operator account '{LOCAL_USER}'")
 
-            broker = local_broker()
-            if broker == PAPER_BROKER and get_auth_token(LOCAL_USER, bypass_cache=True) is None:
-                upsert_auth(
-                    LOCAL_USER,
-                    PAPER_AUTH_TOKEN,
-                    PAPER_BROKER,
-                    feed_token=PAPER_FEED_TOKEN,
-                    user_id=LOCAL_USER,
-                )
-                logger.info("Local mode signed in to the paper broker")
+            ensure_broker_session()
+            broker = active_broker()
 
             ensure_api_key()
 
@@ -104,8 +123,7 @@ def bootstrap() -> bool:
                 set_analyze_mode(True)
                 logger.info("Local mode switched Sandbox mode on")
 
-            if broker == PAPER_BROKER:
-                _load_master_contract(broker)
+            _load_master_contract(broker)
 
             _bootstrapped.set()
             return True
@@ -154,13 +172,21 @@ def attach_operator_session() -> None:
 
     from utils.session import mark_signed_in, set_session_login_time
 
+    try:
+        ensure_broker_session()
+        broker = active_broker()
+    except Exception:
+        logger.exception("Local mode could not read the broker session")
+        return
+
     session.clear()
     session["user"] = LOCAL_USER
     session["user_session_key"] = LOCAL_USER
-    session["broker"] = local_broker()
+    session["broker"] = broker
     session["logged_in"] = True
     session["local_mode"] = True
-    session["FEED_TOKEN"] = PAPER_FEED_TOKEN
+    if broker == PAPER_BROKER:
+        session["FEED_TOKEN"] = PAPER_FEED_TOKEN
     session["USER_ID"] = LOCAL_USER
     session["session_id"] = secrets.token_hex(32)
     session.permanent = True

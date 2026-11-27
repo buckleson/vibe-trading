@@ -87,7 +87,7 @@ GUIDES = {
             },
         ),
         "banner": "Login with Zerodha takes you to Zerodha's Kite login page. Log in "
-        "there and Zerodha sends you back to OpenAlgo. Market data needs an "
+        "there and Zerodha sends you back to Buckleson. Market data needs an "
         "active Kite Connect subscription.",
         "redirect_hint": "Register this exact address as the redirect URL in your broker app.",
     },

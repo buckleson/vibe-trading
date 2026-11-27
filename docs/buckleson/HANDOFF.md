@@ -184,14 +184,24 @@ BUCKLESON_SMOKE_URL=http://127.0.0.1:5000 uv run pytest test/test_bk_sandbox_smo
   CandleViz, chartState, Diagnostics, webServerSummary) already failed before
   this run; they are left out of the CI test step, not fixed.
 
+## Zerodha (added after the first run)
+
+- **API:** the kept `zerodha` plugin. Local mode now follows the stored broker
+  session (`utils/local_mode.py: active_broker`, `ensure_broker_session`): a
+  Zerodha login survives restarts and new browsers, and an ended Zerodha session
+  falls back to paper. Session expiry applies to Zerodha, not to paper
+  (`utils/session.py`).
+- **Kite MCP:** `blueprints/claude_bridge.py` (`KITE_MCP_*`, `kite_mcp_status`,
+  `POST/DELETE /claude/api/kite-mcp`). Status reads Claude Code's user config
+  (`~/.claude.json`, or `$CLAUDE_CONFIG_DIR/.claude.json`). The in-app chat
+  allows `mcp__kite` when it is added and always passes the Kite write tools to
+  `--disallowedTools`. UI: `frontend/src/components/claude/KiteMcp.tsx`.
+- Tests: `test/test_bk_zerodha.py`, `KiteMcp.test.tsx`.
+
 ## Deliberately deferred
 
-- **Zerodha MCP integration** (Kite MCP server or a Zerodha-backed toolset for
-  Claude). Deferred until the operator moves to live trading. When it lands:
-  add it as a second MCP server in `mcp_server_spec`/`write_mcp_config` in
-  `blueprints/claude_bridge.py`, gate it on a Zerodha session, keep Sandbox as
-  the default.
-- Live trading on Zerodha: the plugin and login are kept and untested in this
-  run beyond import.
+- A live Zerodha login and real Kite MCP calls: not testable from the dev
+  container (no Zerodha account, and its network blocks kite.trade). Covered by
+  unit tests and a live in-app chat with Kite MCP added but unreachable.
 - Exchange holiday calendar for the simulator.
 - Any broker other than Zerodha (restore from upstream if ever needed).

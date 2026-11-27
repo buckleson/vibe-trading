@@ -57,6 +57,17 @@ export interface ClaudeStatus {
   access_levels: Record<string, { label: string; description: string }>
   install: ClaudeInstallInfo
   login: ClaudeLoginState
+  broker?: string
+  kite_mcp?: KiteMcpStatus
+}
+
+export interface KiteMcpStatus {
+  name: string
+  url: string
+  added: boolean
+  configured_url: string | null
+  command: string
+  read_only: boolean
 }
 
 export interface ClaudeConnectInfo {
@@ -143,6 +154,10 @@ export const claudeApi = {
   cancelLogin: () =>
     send<{ login: ClaudeLoginState }>('/claude/api/login', 'DELETE').then((d) => d.login),
   stop: (id: string) => send(`/claude/api/chat/${id}/stop`, 'POST'),
+  addKiteMcp: () =>
+    send<{ kite_mcp: KiteMcpStatus }>('/claude/api/kite-mcp', 'POST').then((d) => d.kite_mcp),
+  removeKiteMcp: () =>
+    send<{ kite_mcp: KiteMcpStatus }>('/claude/api/kite-mcp', 'DELETE').then((d) => d.kite_mcp),
 
   /** Stream one turn. Calls onEvent for every server-sent event, resolves at the end. */
   async chat(

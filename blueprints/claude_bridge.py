@@ -62,6 +62,17 @@ STORE_DIR = REPO_ROOT / "db" / "claude"
 CONVERSATIONS_FILE = STORE_DIR / "conversations.json"
 MCP_SERVER_NAME = "buckleson"
 
+# Zerodha's own hosted Kite MCP server. It is added to the operator's Claude
+# Code at user scope, so terminal sessions and the in-app chat both see it.
+# The app keeps it read-only: orders go through the platform server, where
+# Sandbox/Live and the risk checks apply.
+KITE_MCP_NAME = "kite"
+KITE_MCP_URL = os.getenv("KITE_MCP_URL", "https://mcp.kite.trade/mcp")
+KITE_WRITE_TOOLS = [
+    f"mcp__{KITE_MCP_NAME}__{tool}"
+    for tool in ("place_order", "modify_order", "cancel_order", "place_gtt_order", "modify_gtt_order", "delete_gtt_order")
+]
+
 # Tools the agent may use without asking, per access level. Anything else is
 # denied in print mode (there is nobody at a prompt to approve it).
 WEB_SKILL_BASH = [
@@ -220,6 +231,39 @@ def write_mcp_config(api_key: str) -> Path:
     except OSError:
         pass
     return path
+
+
+def claude_user_config() -> Path:
+    """Claude Code's user-scope config file, where `claude mcp add --scope user` writes."""
+    base = os.getenv("CLAUDE_CONFIG_DIR")
+    return Path(base) / ".claude.json" if base else Path.home() / ".claude.json"
+
+
+def kite_mcp_status() -> dict[str, Any]:
+    """Whether Zerodha's Kite MCP server is added to the operator's Claude Code."""
+    entry = None
+    try:
+        data = json.loads(claude_user_config().read_text(encoding="utf-8"))
+        entry = (data.get("mcpServers") or {}).get(KITE_MCP_NAME)
+    except (OSError, ValueError, AttributeError):
+        pass
+    return {
+        "name": KITE_MCP_NAME,
+        "url": KITE_MCP_URL,
+        "added": bool(entry),
+        "configured_url": (entry or {}).get("url") if isinstance(entry, dict) else None,
+        "command": f"claude mcp add --transport http --scope user {KITE_MCP_NAME} {KITE_MCP_URL}",
+        "read_only": True,
+    }
+
+
+def _active_broker() -> str:
+    try:
+        from utils import local_mode
+
+        return local_mode.active_broker()
+    except Exception:
+        return "paper"
 
 
 # --------------------------------------------------------------------------- #
@@ -443,6 +487,8 @@ def status():
             "connected": (cli["installed"] and cli["logged_in"]) or external_status()["connected"],
             "sandbox": bool(get_analyze_mode()),
             "market_data": _market_data_status(),
+            "broker": _active_broker(),
+            "kite_mcp": kite_mcp_status(),
             "desk_dir": str(desk_dir()),
             "skills": _skills_installed(),
             "access_levels": {k: {"label": v["label"], "description": v["description"]} for k, v in ACCESS_LEVELS.items()},
@@ -475,6 +521,35 @@ def _shell_quote(value: str) -> str:
     if value and all(c.isalnum() or c in "-_./:=@" for c in value):
         return value
     return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+@claude_bp.route("/kite-mcp", methods=["POST"])
+@check_session_validity
+def add_kite_mcp():
+    """Add Zerodha's Kite MCP server to the operator's Claude Code (user scope)."""
+    binary = claude_binary()
+    if not binary:
+        return jsonify({"status": "error", "message": "Claude Code is not installed on this machine."}), 409
+    if not kite_mcp_status()["added"]:
+        code, out = _run_quick(
+            [binary, "mcp", "add", "--transport", "http", "--scope", "user", KITE_MCP_NAME, KITE_MCP_URL]
+        )
+        if code != 0:
+            return jsonify({"status": "error", "message": out or "Claude Code could not add the Kite MCP server."}), 502
+    return jsonify({"status": "success", "kite_mcp": kite_mcp_status()})
+
+
+@claude_bp.route("/kite-mcp", methods=["DELETE"])
+@check_session_validity
+def remove_kite_mcp():
+    binary = claude_binary()
+    if not binary:
+        return jsonify({"status": "error", "message": "Claude Code is not installed on this machine."}), 409
+    if kite_mcp_status()["added"]:
+        code, out = _run_quick([binary, "mcp", "remove", KITE_MCP_NAME, "--scope", "user"])
+        if code != 0:
+            return jsonify({"status": "error", "message": out or "Claude Code could not remove the Kite MCP server."}), 502
+    return jsonify({"status": "success", "kite_mcp": kite_mcp_status()})
 
 
 @claude_bp.route("/heartbeat", methods=["POST"])
@@ -543,7 +618,7 @@ def delete_conversation(conv_id: str):
 # --------------------------------------------------------------------------- #
 
 
-def _system_prompt(sandbox: bool) -> str:
+def _system_prompt(sandbox: bool, broker: str = "paper", kite: bool = False) -> str:
     mode = (
         "The platform is in SANDBOX mode: every order is simulated against live or simulated prices "
         "and no real money moves."
@@ -555,12 +630,30 @@ def _system_prompt(sandbox: bool) -> str:
         f"You are connected to the platform through the `{MCP_SERVER_NAME}` MCP server "
         "(quotes, depth, history, option chains, Greeks, funds, order book, trade book, positions, holdings, "
         "placing, modifying and cancelling orders). "
-        f"{mode} "
+        f"{mode} {_broker_line(broker, sandbox)}{_kite_line(kite)}"
         "Use strategy name 'claude' for orders you place. Before placing an order, state the symbol, exchange, "
         "side, quantity, product and price type in one line, then place it. Report the order id and fill. "
         "Symbols use the OpenAlgo format (RELIANCE on NSE, NIFTY on NSE_INDEX, NIFTY28NOV2524000CE on NFO). "
         "For news and web research use WebSearch/WebFetch or the installed skills (agent-reach, firecrawl). "
         "Keep answers short and scannable: tables for numbers, no filler."
+    )
+
+
+def _broker_line(broker: str, sandbox: bool) -> str:
+    if broker == "zerodha":
+        where = "orders stay simulated" if sandbox else "orders are real Zerodha orders"
+        return f"The broker logged in is Zerodha: quotes and history are live from Kite, {where}. "
+    return "No broker is logged in: the paper broker supplies prices. "
+
+
+def _kite_line(kite: bool) -> str:
+    if not kite:
+        return ""
+    return (
+        f"Zerodha's own `{KITE_MCP_NAME}` MCP server is also connected, read-only here: use it for the Zerodha "
+        "account view (profile, margins, holdings, positions, orders, GTTs, mutual funds). If it answers with a "
+        "login link, show the link and ask the user to open it. Never place, modify or cancel orders through it; "
+        f"use the `{MCP_SERVER_NAME}` server for every order. "
     )
 
 
@@ -600,6 +693,8 @@ def chat():
 
     sandbox = bool(get_analyze_mode())
     level = ACCESS_LEVELS[access]
+    kite = kite_mcp_status()["added"]
+    allowed = [*level["allowed"], f"mcp__{KITE_MCP_NAME}"] if kite else list(level["allowed"])
     args = [
         binary,
         "-p",
@@ -609,11 +704,13 @@ def chat():
         "--verbose",
         "--include-partial-messages",
         "--append-system-prompt",
-        _system_prompt(sandbox),
+        _system_prompt(sandbox, _active_broker(), kite),
         "--permission-mode",
         level["permission_mode"],
         "--allowedTools",
-        ",".join(level["allowed"]),
+        ",".join(allowed),
+        "--disallowedTools",
+        ",".join(KITE_WRITE_TOOLS),
     ]
     if api_key:
         args += ["--mcp-config", str(write_mcp_config(api_key))]

@@ -36,3 +36,11 @@ cd ~/.buckleson/desk && claude
 ## Style
 
 Short, scannable answers. Tables for numbers. No filler, no emojis.
+
+## Zerodha Kite MCP
+
+If the `kite` MCP server (Zerodha's own) is connected, use it only to read the
+Zerodha account: profile, margins, holdings, positions, orders, GTTs, mutual
+funds. If it returns a login link, show it and ask the user to open it. Place,
+modify and cancel every order through `buckleson`, never through `kite`, so
+Sandbox/Live and the risk checks apply.

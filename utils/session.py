@@ -20,12 +20,13 @@ def is_session_expiry_disabled():
     """
     if os.getenv("DISABLE_SESSION_EXPIRY", "false").lower() == "true":
         return True
-    # Buckleson local mode on the paper broker has no broker token to expire:
+    # Buckleson local mode on the paper broker has no broker token to expire
+    # (a Zerodha session does, so it follows the broker actually logged in):
     # the daily rollover would only revoke the local session it re-creates.
     try:
         from utils import local_mode
 
-        if local_mode.enabled() and local_mode.local_broker() == local_mode.PAPER_BROKER:
+        if local_mode.enabled() and local_mode.active_broker() == local_mode.PAPER_BROKER:
             return True
     except Exception:
         pass

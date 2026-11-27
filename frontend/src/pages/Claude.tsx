@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { claudeApi } from '@/api/claude'
 import { ClaudeChat } from '@/components/claude/ClaudeChat'
 import { StatusDot, useClaudeState } from '@/components/claude/ClaudePanel'
 import { ConnectClaude } from '@/components/claude/ConnectClaude'
+import { CopyBlock } from '@/components/claude/CopyBlock'
+import { KiteMcp } from '@/components/claude/KiteMcp'
 import { cn } from '@/lib/utils'
 import { useClaudeStore } from '@/stores/claudeStore'
 
@@ -15,29 +17,6 @@ function relTime(iso?: string | null): string {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return new Date(iso).toLocaleDateString()
-}
-
-function CopyBlock({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <div className="group relative">
-      <pre className="overflow-x-auto whitespace-pre rounded-lg bg-muted px-3 py-2.5 pr-9 font-mono text-[11px] leading-relaxed">
-        {text}
-      </pre>
-      <button
-        type="button"
-        aria-label={`Copy ${label}`}
-        onClick={() => {
-          navigator.clipboard?.writeText(text)
-          setCopied(true)
-          window.setTimeout(() => setCopied(false), 1500)
-        }}
-        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
-      >
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      </button>
-    </div>
-  )
 }
 
 function Row({ label, value, ok }: { label: string; value: string; ok?: boolean | null }) {
@@ -120,7 +99,13 @@ function ConnectionPanel() {
             }
             ok={ext?.connected}
           />
+          <Row
+            label="Broker"
+            value={status?.broker === 'zerodha' ? 'Zerodha' : status ? 'None (paper)' : '...'}
+            ok={status ? status.broker === 'zerodha' : null}
+          />
           <Row label="Orders" value={status?.sandbox ? 'Sandbox' : status ? 'Live' : '...'} />
+          {status?.broker === 'zerodha' && <Row label="Prices" value="Live (Zerodha)" ok />}
           {status?.market_data && (
             <Row
               label="Prices"
@@ -147,6 +132,8 @@ function ConnectionPanel() {
           <div className="h-16 rounded-lg bg-muted bk-pulse" />
         )}
       </section>
+
+      <KiteMcp />
 
       <section>
         <h3 className="mb-2 text-sm font-semibold">Skills</h3>

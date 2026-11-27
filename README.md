@@ -68,6 +68,35 @@ export FIRECRAWL_API_KEY=fc-...   # https://firecrawl.dev
 The desk workspace (`~/.buckleson/desk`, override with `BUCKLESON_DESK_DIR`) is
 seeded from [desk/](desk/): its CLAUDE.md tells Claude how to trade here.
 
+## Connecting Zerodha
+
+Everything works without Zerodha (paper broker, simulated or Yahoo prices).
+To use your Zerodha account:
+
+1. **Kite Connect app.** At [developers.kite.trade](https://developers.kite.trade)
+   create an app (a paid Kite Connect subscription is needed for market data)
+   and set its redirect URL to `http://127.0.0.1:5000/zerodha/callback`.
+2. **Keys.** Open **Broker** → **Zerodha** → **Configure**, paste the API key and
+   secret, save.
+3. **Login with Zerodha.** You go to Kite, log in with your password and TOTP,
+   and come back signed in. Prices, history, holdings and positions are now
+   Zerodha's. **Sandbox stays on**: orders are still simulated, on live Kite
+   prices. Switch to **Live** in the top bar to send real orders.
+4. **Daily login.** Zerodha ends API sessions every morning. When the session
+   ends, the app falls back to the paper broker until you log in again.
+
+Real API orders need a static IP registered with Zerodha (SEBI rule since
+April 2026).
+
+**Zerodha Kite MCP.** On the `/claude` page, **Zerodha Kite MCP → Add to Claude
+Code** runs `claude mcp add --transport http --scope user kite https://mcp.kite.trade/mcp`.
+Your terminal sessions and the in-app chat then have Zerodha's own read-only
+tools (profile, margins, holdings, positions, orders, GTTs, mutual funds).
+The first time, Claude shows a Kite login link to open. In the app, the Kite
+order and GTT tools are blocked: orders go through the `buckleson` server so
+Sandbox/Live and the risk checks apply. Set `KITE_MCP_URL` to point at a
+self-hosted Kite MCP server instead.
+
 ## Settings (.env)
 
 | Key | Default | Meaning |
