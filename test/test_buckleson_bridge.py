@@ -67,7 +67,9 @@ def _hook_app():
 def test_every_browser_request_gets_the_operator_session(monkeypatch):
     monkeypatch.setenv("BUCKLESON_LOCAL_MODE", "true")
     monkeypatch.setattr(local_mode._bootstrapped, "is_set", lambda: True)
-    with mock.patch("utils.session.mark_signed_in"), mock.patch("database.auth_db.register_session"):
+    with mock.patch("utils.session.mark_signed_in"), mock.patch("database.auth_db.register_session"), mock.patch.object(
+        local_mode, "ensure_broker_session"
+    ), mock.patch("database.auth_db.get_auth_token_dbquery", return_value=None):
         client = _hook_app().test_client()
         data = client.get("/dashboard").get_json()
     assert data == {"user": local_mode.LOCAL_USER, "broker": "paper", "logged_in": True}
